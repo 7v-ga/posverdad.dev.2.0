@@ -1,0 +1,17 @@
+title,body,labels,milestone
+"EPIC — App Frontend base (Next.js + Tailwind + shadcn/ui + Auth)","App shell para toda la UI... Criterios: Next.js+Tailwind, shadcn/ui, layout, login/logout, guardas de ruta.","type/epic,area/frontend,priority/P0",
+"Backend: endpoint /auth/login + JWT (admin/lectura)","Implementar /auth/login + emisión de JWT; criterios: 401 en credenciales inválidas; tests.","type/feature,area/backend,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"Backend: RBAC middleware (admin/read)","Decorador/Dependencia require_role([...]); proteger rutas de edición.","type/feature,area/backend,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"EPIC — Repositorio de artículos (listar/filtrar/ordenar/paginar + detalle)","Vista tabla con filtros combinables, orden, paginación, y detalle.","type/epic,area/frontend,priority/P0",
+"Backend: GET /articles (paginado + filtros + orden)","Endpoint con page/page_size/sort/q/filtros; respuesta con total; índices DB.","type/feature,area/backend,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"Frontend: Tabla “Repositorio” + filtros y orden","DataGrid o tabla custom; filtros persistentes en querystring; estados de carga/empty/error.","type/feature,area/frontend,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"EPIC — Gestión de Entidades (alias, bloqueadas, merge) + Bitácora","Módulo de edición con bitácora (antes/después) y bulk ops.","type/epic,area/frontend,priority/P0",
+"DB: audit_log (bitácora de cambios)","Tabla audit_log con actor, acción, before/after (JSONB) e índices; escritura transaccional.","type/feature,area/db,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"Backend: CRUD alias y bloqueadas","Rutas REST para alias/bloqueadas; validaciones; auditoría.","type/feature,area/backend,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"Frontend: UI Entidades + editor de alias/bloqueadas + bulk ops","Tablas con filtros, modales/inline edit, bulk select y acciones.","type/feature,area/frontend,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"Backend: Merge de entidades","Servicio transaccional que migra referencias A→B, marca merged_into, y audita.","type/feature,area/backend,priority/P1,status/ready","M1 — Repositorio + Entidades"
+"EPIC — Seguridad & Observabilidad mínima","Rate limit login, logs JSON, request-id, health/readiness.","type/epic,area/devops,priority/P0",
+"CI mínimo (lint + test) y reglas PR","Workflow GH Actions; CODEOWNERS; branch protection.","type/chore,area/devops,priority/P0,status/ready","M1 — Repositorio + Entidades"
+"Docs: README (arranque dev) + ADR-0001 (arquitectura)","README reproducible + ADR sobre stack/decisiones.","type/docs,area/product,priority/P1,status/ready","M1 — Repositorio + Entidades"
+"Backend: Semillas mínimas (usuarios, roles, feature-flags)","Seeds para admin/read; banderas para edición en prod.","type/chore,area/backend,priority/P1,status/ready","M1 — Repositorio + Entidades"
+"QA: pruebas end-to-end smoke (repositorio + alias)","Playwright/Cypress: login, listar artículos, crear alias, bloquear entidad.","type/test,area/qa,priority/P1,status/ready","M1 — Repositorio + Entidades"

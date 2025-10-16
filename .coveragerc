@@ -1,0 +1,43 @@
+[run]
+# Cobertura de ramas (if/else/try)
+branch = True
+
+# Paquete que medimos (coincide con --cov=scrapy_project)
+source = scrapy_project
+
+# Archivos/carpetas que NO queremos medir por ahora
+omit =
+    # Infra de Scrapy / items / settings / pipelines / spiders
+    scrapy_project/items.py
+    scrapy_project/middlewares.py
+    scrapy_project/pipelines.py
+    scrapy_project/settings.py
+    scrapy_project/spiders/*
+    scrapy_project/storage.py
+
+    # Boilerplate/general
+    */__init__.py
+    tests/*
+    db/*
+    docs/*
+    logs/*
+    exports/*
+    graphs/*
+    htmlcov/*
+    htmlcov-stanza/*
+    setup_env.sh
+    reset_env.sh
+    postverdad.sh
+
+[report]
+# Muestra líneas faltantes, no ocultes lo importante
+show_missing = True
+skip_covered = False
+
+# Umbral inicial: que CI esté verde hoy. Sube a 80/85 cuando cierres los tests extra.
+fail_under = 70
+
+[html]
+# Dónde dejar el reporte HTML (usa: `coverage html` y abre htmlcov/index.html)
+directory = htmlcov
+ 

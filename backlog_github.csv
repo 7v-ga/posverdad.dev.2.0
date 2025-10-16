@@ -1,0 +1,32 @@
+Title,Body,Labels,Assignees,Milestone
+Definir arquitectura final (Next.js + FastAPI + Postgres + Redis) y ADR inicial,"Documento ADR que justifique la arquitectura elegida, trade-offs, y cómo migraremos desde el estado actual. Entregable: /docs/adr/0001-architecture.md","P0,architecture,docs,backend,frontend",,M0 - Fundaciones
+Configurar monorepo y estructura de carpetas,"Crear monorepo (pnpm workspaces o turborepo). Paquetes: web (Next.js), api (FastAPI), shared (tipos/contratos), infra (IaC opcional).","P0,repo,infra,devx",,M0 - Fundaciones
+Generar OpenAPI (FastAPI) para Articles/Entities/Sources,"Definir esquemas pydantic, endpoints list/get/create/update/bulk, filtros y paginación. Entregable: /api/openapi.json","P0,backend,api,db",,M0 - Fundaciones
+Normalizar esquema DB y vistas de reporting,"Revisar schema.sql y views (v_run_summary, v_run_top_sources, v_run_entities_top, v_run_top_articles, v_run_sentiment_bins). Corregir GROUP BY/aggregates; llaves; índices. Entregable: migraciones alembic.","P0,db,backend,analytics",,M0 - Fundaciones
+API de autenticación + RBAC mínima (admin/read),JWT con refresh; roles admin/read. Middlewares en FastAPI; seed de usuarios. Entregable: /api/auth/*,"P0,backend,security,auth",,M0 - Fundaciones
+UI base: shell Next.js + Tailwind + shadcn/ui,"Layout (sidebar/header), theming, error boundary, toasts, loading states. Sonarqube/ESLint/Prettier.","P0,frontend,ui,devx",,M0 - Fundaciones
+Tabla de Artículos (DataGrid) con filtros server-side,"Next.js page /articles con filtros (fecha, fuente, entidad, texto), paginación, ordenamiento. Integra API GET /articles.","P0,frontend,ui,backend,api",,M1 - Repositorio (Artículos)
+Tabla de Entidades con búsqueda y filtros,"Next.js page /entities con filtros (tipo, alias, bloqueadas), paginación. Integra API /entities.","P0,frontend,ui,backend,api",,M1 - Repositorio (Artículos)
+Edición de entidades: alias y bloqueo (single edit),Form modal para editar alias y flag de bloqueo. Validaciones mínimas. PATCH /entities/{id}.,"P0,frontend,ui,backend,api",,M2 - Edición Entidades
+Bulk ops de entidades (alias/bloqueo),Selección múltiple en tabla + acción masiva. Endpoint POST /entities/bulk con operaciones atómicas.,"P0,frontend,ui,backend,api,bulk",,M2 - Edición Entidades
+Bitácora de cambios (audit log),Tabla audit_log (quién/qué/antes/después/cuándo). Decorador en endpoints mutables; vista /audit-log.,"P0,backend,security,observability",,M3 - Seguridad y Trazabilidad
+Control de acceso UI por roles,Ocultar/inhabilitar acciones según rol. Guardas de ruta; server actions con verificación de claims.,"P0,frontend,security,auth,ui",,M3 - Seguridad y Trazabilidad
+Programación de scrapes desde UI (creación y ejecución manual),Pantalla /jobs: crear job con fuente/parámetros/limites duplicados; disparo manual; ver estado.,"P0,frontend,backend,scraper,ui",,M4 - Scraper Control
+"API jobs: crear, listar, disparar, consultar estado",Endpoints /jobs (POST/GET) y /jobs/{id}/run. Integración con Celery/Redis; modelo Job/Run en DB.,"P0,backend,api,scraper,queue",,M4 - Scraper Control
+Notificaciones Slack: resumen de run y manejo de errores,Refactor notifier para usar chat.postMessage + fallback de archivo si aplica. Evitar métodos deprecated.,"P0,backend,notifications,slack,ops",,M4 - Scraper Control
+Dashboard básico (KPIs run actual y últimos 30),"UI /dashboards/overview: tarjetas KPIs, charts mínimos (artículos/día, duración). Server-side fetch.","P0,frontend,analytics,ui",,M5 - BI básico
+"CI/CD GitHub Actions (lint, test, build, docker)",Workflow para web y api; cache de deps; build/push a registry; branch protections.,"P0,infra,ci,devx",,M0 - Fundaciones
+Buscador full-text (Postgres tsvector) en artículos,Crear índice GIN; endpoint de búsqueda con ranking/ts_headline. UI de búsqueda avanzada.,"P1,backend,db,frontend,search",,M6 - UX & Robustez
+Reconciliación de entidades (merge/split),Endpoints y UI para fusionar entidades duplicadas; mantener audit log y reindexar vínculos.,"P1,backend,frontend,entities,data-quality",,M6 - UX & Robustez
+Validaciones de calidad del dato previas a insert,"Reglas para URL canónica, fechas, longitudes mínimas; métricas en v_run_summary.","P1,backend,db,data-quality",,M6 - UX & Robustez
+Paginación eficiente y cursores en API,Cambiar offset por cursor-keyset donde aplique. Documentar límites.,"P1,backend,api,performance",,M6 - UX & Robustez
+Mejoras de accesibilidad (a11y) y navegación,"Roles aria, foco, atajos teclado (k), contraste, tests básicos con axe.","P1,frontend,ui,a11y",,M6 - UX & Robustez
+"Dashboards avanzados (cohortes, distribución de polaridad, NER por fuente)",Vistas y queries optimizadas; charts interactivos; export CSV/PNG.,"P2,frontend,analytics,backend",,M7 - BI Avanzado
+Capa de caching (Redis) para endpoints de lectura pesada,Cache con invalidación por tabla/entidad; TTLs por vista.,"P2,backend,performance,cache",,M8 - Escalabilidad
+"Hardening seguridad (CSP, rate limiting, audit trail ampliado)","CSP estricta, helmet headers (Next), rate limit en FastAPI, auditoría extendida.","P2,security,backend,frontend",,M8 - Escalabilidad
+Infra-as-code (Docker Compose/K8s opcional),Definir docker-compose para dev y prod; opcional: charts Helm para k8s.,"P2,infra,ops",,M8 - Escalabilidad
+"Observabilidad (logging estructurado, métricas, tracing)","Log JSON, Prometheus metrics (api), trace básico (OpenTelemetry). Dash Kibana/Grafana.","P2,observability,backend,ops",,M8 - Escalabilidad
+Documentación de usuario y runbooks,"Guías de uso de interfaz, bulk ops, programación de scrapes. Runbooks de incidentes comunes.","P2,docs,ops",,M9 - Cierre MVP+
+QA: test e2e smoke (Playwright),"Flujos críticos: login, listar/filtrar, editar entidad, bulk ops, crear job, ver dashboard.","P2,qa,frontend,tests",,M9 - Cierre MVP+
+GOOD FIRST ISSUE: Componente Badge de roles,Badge visual (admin/read) reutilizable en tablas y vistas de detalle.,"good first issue,frontend,ui,P2",,M6 - UX & Robustez
+GOOD FIRST ISSUE: Script de seed (usuarios/fuentes dummy),Script que crea usuario admin/read y 2 fuentes demo para desarrollo.,"good first issue,backend,devx,P2",,M0 - Fundaciones

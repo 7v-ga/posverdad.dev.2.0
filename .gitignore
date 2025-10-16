@@ -1,0 +1,77 @@
+# === Python / Virtualenv ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+pip-log.txt
+.venv/
+venv/
+ENV/
+env/
+
+# === Jupyter / IPython ===
+.ipynb_checkpoints/
+*.ipynb~
+# (no ignoramos *.ipynb para permitir versionar notebooks)
+
+# === Logs y temporales ===
+*.log
+logs/
+*.tmp
+*.swp
+*.swo
+.tmp/
+tmp/
+.DS_Store
+Thumbs.db
+# Ambas variantes
+.last_run
+last_run
+
+# === Data / Outputs ===
+outputs/
+reports/
+graph/
+graphs/
+exports/
+.cache/
+htmlcov/
+htmlcov-*/
+htmlcov-stanza/
+.coverage
+.coverage.*
+coverage.xml
+
+# === Caches / QA ===
+.mypy_cache/
+.pytest_cache/
+.tox/
+.ruff_cache/
+
+# === Configuración / Entornos ===
+.env
+.env.local
+.env.*.local
+.envrc
+.direnv/
+
+# === VSCode / IDE ===
+.vscode/
+.idea/
+*.code-workspace
+
+# === Docker (overrides locales / artefactos) ===
+docker-compose.override.yml
+.docker/
+*.pid
+*.sock
+
+# Por si alguien creó un archivo con este nombre raro
+__pycache__.pyc

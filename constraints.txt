@@ -1,0 +1,4 @@
+# Pins de compatibilidad (descomentarlos sólo si aparece un conflicto en Ubuntu 24.04)
+# protobuf==4.25.3
+# regex==2024.5.15
+# pydantic==2.8.2

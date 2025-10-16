@@ -1,0 +1,52 @@
+name: Feature request
+description: Solicita una nueva funcionalidad
+title: "feat: "
+labels: ["type/feature", "status/needs-info"]
+assignees: []
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto / problema
+      description: ¿Qué problema resuelve? ¿Para quién y por qué ahora?
+      placeholder: Describe el dolor/hipótesis de valor
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Alcance
+      description: ¿Qué incluye? ¿Qué explícitamente NO incluye?
+      placeholder: In/out of scope
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación (DoR/DoD)
+      description: "Done when… (casos felices, edge cases, métricas)"
+      placeholder: |
+        - Se puede…
+        - Dado/cuando/entonces…
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      options:
+        - priority/P0
+        - priority/P1
+        - priority/P2
+        - priority/P3
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - area/frontend
+        - area/backend
+        - area/data
+        - area/devops
+        - area/nlp
+        - area/etl

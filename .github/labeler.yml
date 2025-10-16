@@ -1,0 +1,20 @@
+area/frontend:
+  - "frontend/**"
+  - "**/*.tsx"
+  - "**/*.jsx"
+
+area/backend:
+  - "backend/**"
+  - "api/**"
+  - "**/*.py"
+  - "**/*.go"
+  - "**/*.rb"
+
+area/data:
+  - "sql/**"
+  - "migrations/**"
+  - "db/**"
+
+type/docs:
+  - "**/*.md"
+  - "docs/**"

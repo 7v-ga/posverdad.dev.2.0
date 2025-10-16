@@ -1,0 +1,46 @@
+name: Bug report
+description: Reporta un error reproducible
+title: "fix: "
+labels: ["type/bug", "status/needs-info"]
+assignees: []
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado actual
+      placeholder: Logs, screenshots, trazas
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Entorno
+      placeholder: OS/Browser/Version, rama, commit, etc.
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      options: [priority/P0, priority/P1, priority/P2, priority/P3]
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options: [area/frontend, area/backend, area/data, area/devops]

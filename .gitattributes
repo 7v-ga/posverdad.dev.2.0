@@ -1,0 +1,14 @@
+# ---- Linguist: excluir notebooks del cómputo de lenguajes ----
+*.ipynb linguist-documentation
+
+# (Opcional) artefactos marcados como generados
+graphs/** linguist-generated
+logs/** linguist-generated
+htmlcov/** linguist-generated
+exports/** linguist-generated
+
+# (Opcional) bytecode/cachés, por si alguna vez quedan versionados
+*.pyc linguist-generated -text
+*.pyo linguist-generated -text
+*.pyd linguist-generated -text
+__pycache__/** linguist-generated -text

@@ -1,0 +1,22 @@
+name: Stale issues
+on:
+  schedule:
+    - cron: "0 3 * * *"
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 21
+          days-before-close: 7
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+          exempt-issue-labels: "priority/P0,priority/P1,status/blocked"
+          stale-issue-message: >
+            Marcado como inactivo por falta de actividad. Se cerrará en 7 días si no hay novedades.
+          stale-pr-message: >
+            PR inactivo. Se cerrará en 7 días si no hay novedades.
