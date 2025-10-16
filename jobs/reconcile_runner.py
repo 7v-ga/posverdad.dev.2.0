@@ -29,7 +29,7 @@ def run_batches(conn,
                 sleep_ms: int = 0,
                 statement_timeout_ms: int = 60000,
                 lock_timeout_ms: int = 5000,
-                app_name: str = "postverdad.reconcile",
+                app_name: str = "posverdad.reconcile",
                 dry_run: bool = False):
     """
     Ejecuta el SQL en bucle. Cada ejecución del archivo debe retornar UNA fila con UNA columna
@@ -101,8 +101,8 @@ def run_batches(conn,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Postverdad DB Reconciliations (blocklist & aliases)")
-    parser.add_argument("--dsn", default=os.getenv("POSTVERDAD_DSN", "dbname=postverdad user=postgres"),
+    parser = argparse.ArgumentParser(description="Posverdad DB Reconciliations (blocklist & aliases)")
+    parser.add_argument("--dsn", default=os.getenv("POSTVERDAD_DSN", "dbname=posverdad user=postgres"),
                         help="DSN de conexión (por defecto toma POSTVERDAD_DSN)")
     parser.add_argument("--jobs-dir", default=None, help="Directorio de jobs SQL (por defecto: junto a este script)")
     parser.add_argument("--only", choices=["all", "blocklist", "aliases"], default="all",
@@ -159,7 +159,7 @@ def main():
                 sleep_ms=args.sleep_ms,
                 statement_timeout_ms=args.statement_timeout_ms,
                 lock_timeout_ms=args.lock_timeout_ms,
-                app_name=f"postverdad.reconcile.{label}",
+                app_name=f"posverdad.reconcile.{label}",
                 dry_run=args.dry_run,
             )
     finally:

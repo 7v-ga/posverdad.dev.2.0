@@ -1,15 +1,15 @@
-# test_nlp_transformers.py — Pruebas unitarias para PostverdadNLP
+# test_nlp_transformers.py — Pruebas unitarias para PosverdadNLP
 # ===============================================================
 
 import unittest
 from unittest.mock import MagicMock
-from scrapy_project.nlp_transformers import PostverdadNLP
+from scrapy_project.nlp_transformers import PosverdadNLP
 
-class TestPostverdadNLP(unittest.TestCase):
+class TestPosverdadNLP(unittest.TestCase):
 
     def setUp(self):
         # Crea una instancia sin spaCy para pruebas individuales
-        self.nlp = PostverdadNLP(nlp_model=None)
+        self.nlp = PosverdadNLP(nlp_model=None)
         self.nlp.sa = MagicMock()
 
     def test_analyze_sentiment_positive(self):

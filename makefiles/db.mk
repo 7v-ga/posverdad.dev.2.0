@@ -21,8 +21,8 @@ WAIT_DB_INTERVAL  ?= 1           # segundos entre reintentos
 
 # Backups
 BACKUP_DIR        ?= backups
-BACKUP_PREFIX     ?= postverdad
-# Nombre de archivo: backups/postverdad-20250101-235959.sql.gz
+BACKUP_PREFIX     ?= posverdad
+# Nombre de archivo: backups/posverdad-20250101-235959.sql.gz
 BACKUP_FILE       = $(BACKUP_DIR)/$(BACKUP_PREFIX)-$$(date +%Y%m%d-%H%M%S).sql.gz
 
 # --- Helpers ---
@@ -68,7 +68,7 @@ db-up: compose-up ## Levantar DB/Redis y verificar que Postgres acepta conexione
 	@deadline=$$(( $$(date +%s) + $(WAIT_DB_SMOKE_TIMEOUT) )); \
 	while true; do \
 	  if docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-	    pg_isready -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" >/dev/null 2>&1; then \
+	    pg_isready -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" >/dev/null 2>&1; then \
 	    echo "✅ Postgres listo (accepting connections)"; break; \
 	  fi; \
 	  [ $$(date +%s) -ge $$deadline ] && { echo "❌ Timeout en smoke test de pg_isready"; exit 1; }; \
@@ -81,7 +81,7 @@ db-nuke: compose-reset ## Destruye contenedores y volúmenes (DESTRUCTIVO)
 
 db-shell: ## Abrir psql dentro del servicio de Postgres
 	@docker compose -f $(COMPOSE_FILE) exec $(DB_SERVICE) \
-		psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}"
+		psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}"
 
 db-logs: ## Ver logs en vivo de Postgres
 	@docker compose -f $(COMPOSE_FILE) logs -f $(DB_SERVICE)
@@ -93,7 +93,7 @@ db-backup: ## Crea backup comprimido del esquema+datos (pg_dump | gzip) en $(BAC
 	@echo "💾 Creando backup en $(BACKUP_DIR)..."
 	@set -o pipefail; \
 	docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-		sh -ceu 'pg_dump -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -F p --no-owner --no-privileges' \
+		sh -ceu 'pg_dump -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -F p --no-owner --no-privileges' \
 	| gzip > "$(BACKUP_FILE)"
 	@ls -lh "$(BACKUP_DIR)" | tail -n 1
 	@echo "✅ Backup creado: $$(ls -1t $(BACKUP_DIR) | head -n1)"
@@ -104,13 +104,13 @@ ifndef FILE
 endif
 	@echo "🧩 Restaurando desde $(FILE) (modo destructivo del esquema public)..."
 	@docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-		sh -ceu 'psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"'
+		sh -ceu 'psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"'
 	@if echo "$(FILE)" | grep -qi '\.gz$$'; then \
 		gunzip -c "$(FILE)" | docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-			psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -v ON_ERROR_STOP=1 ; \
+			psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -v ON_ERROR_STOP=1 ; \
 	else \
 		cat "$(FILE)" | docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-			psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -v ON_ERROR_STOP=1 ; \
+			psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -v ON_ERROR_STOP=1 ; \
 	fi
 	@echo "✅ Restore completado"
 
@@ -121,10 +121,10 @@ endif
 	@echo "🧩 Restaurando (modo seguro, sin DROP SCHEMA) desde $(FILE)..."
 	@if echo "$(FILE)" | grep -qi '\.gz$$'; then \
 		gunzip -c "$(FILE)" | docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-			psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -v ON_ERROR_STOP=1 ; \
+			psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -v ON_ERROR_STOP=1 ; \
 	else \
 		cat "$(FILE)" | docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-			psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -v ON_ERROR_STOP=1 ; \
+			psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -v ON_ERROR_STOP=1 ; \
 	fi
 	@echo "✅ Restore seguro completado"
 
@@ -134,7 +134,7 @@ ifndef FILE
 endif
 	@echo "📜 Ejecutando SQL: $(FILE)"
 	@cat "$(FILE)" | docker compose -f $(COMPOSE_FILE) exec -T $(DB_SERVICE) \
-		psql -U "$${POSTGRES_USER:-postverdad}" -d "$${POSTGRES_DB:-postverdad}" -v ON_ERROR_STOP=1
+		psql -U "$${POSTGRES_USER:-posverdad}" -d "$${POSTGRES_DB:-posverdad}" -v ON_ERROR_STOP=1
 	@echo "✅ SQL ejecutado"
 
 db-port: ## Muestra quién usa el puerto de Postgres en el host

@@ -1,6 +1,6 @@
-# 👩‍💻 Guía de desarrollo — Postverdad
+# 👩‍💻 Guía de desarrollo — Posverdad
 
-Guía para preparar el entorno, correr pruebas y contribuir a **Postverdad** en local.
+Guía para preparar el entorno, correr pruebas y contribuir a **Posverdad** en local.
 
 ---
 
@@ -198,9 +198,9 @@ git push -u origin feat/mi-feature
 Copia `.env.example` como `.env` y ajusta según tu entorno. Ejemplo:
 
 ```dotenv
-POSTGRES_DB=postverdad
-POSTGRES_USER=postverdad
-POSTGRES_PASSWORD=postverdad
+POSTGRES_DB=posverdad
+POSTGRES_USER=posverdad
+POSTGRES_PASSWORD=posverdad
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 

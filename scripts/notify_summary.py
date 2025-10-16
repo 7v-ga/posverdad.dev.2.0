@@ -14,7 +14,7 @@ matplotlib.use("Agg")  # backend sin X
 import matplotlib.pyplot as plt
 
 # ========= ENV =========
-DATABASE_URL          = os.getenv("DATABASE_URL", "postgresql+psycopg://postverdad:postverdad@localhost:5432/postverdad")
+DATABASE_URL          = os.getenv("DATABASE_URL", "postgresql+psycopg://posverdad:posverdad@localhost:5432/posverdad")
 SLACK_TOKEN           = os.getenv("SLACK_BOT_TOKEN", "").strip()
 SLACK_USER_TOKEN      = os.getenv("SLACK_USER_TOKEN", "").strip()
 SLACK_CHANNEL         = os.getenv("SLACK_CHANNEL", "").strip()

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script maestro del proyecto Postverdad
+# Script maestro del proyecto Posverdad
 # Ejecuta scraping, verifica estado, genera resumen y notifica
 
 set -e  # Detener en cualquier error

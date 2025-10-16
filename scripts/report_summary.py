@@ -87,7 +87,7 @@ def resumen_por_categoria():
 
 def exportar_html(df, top_errores_df, categorias_df=None):
     try:
-        html = "<h1>Resumen Postverdad</h1>\n"
+        html = "<h1>Resumen Posverdad</h1>\n"
 
         html += "<h2>Últimos runs</h2>\n"
         html += df.to_html(index=False)

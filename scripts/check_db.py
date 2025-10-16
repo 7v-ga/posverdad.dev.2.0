@@ -12,9 +12,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def build_dsn() -> str:
-    db = os.getenv("POSTGRES_DB", "postverdad")
-    user = os.getenv("POSTGRES_USER", "postverdad")
-    pwd = os.getenv("POSTGRES_PASSWORD", "postverdad")
+    db = os.getenv("POSTGRES_DB", "posverdad")
+    user = os.getenv("POSTGRES_USER", "posverdad")
+    pwd = os.getenv("POSTGRES_PASSWORD", "posverdad")
     host = os.getenv("POSTGRES_HOST", "localhost")
     port = os.getenv("POSTGRES_PORT", "5432")
     # psycopg v3 (driver moderno)

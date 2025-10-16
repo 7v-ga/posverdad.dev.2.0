@@ -89,7 +89,7 @@ def test_empty_text_returns_exact_contract():
     """Early-return: texto vacío/espacios debe devolver estructura exacta (igual que el test 'conocido')."""
     orch = NLPOrchestrator(
         spacy_model=FakeSpacyOK(),
-        postverdad_nlp=None,
+        posverdad_nlp=None,
         framing_analyzer=None,
         preprocessor=None,
     )
@@ -115,7 +115,7 @@ def test_preprocessor_dict_is_preserved_and_used_for_ner_sentiment_subjectivity_
 
     orch = NLPOrchestrator(
         spacy_model=FakeSpacyOK(),
-        postverdad_nlp=FakePVNLP(),
+        posverdad_nlp=FakePVNLP(),
         framing_analyzer=FakeFramingAnalyze(),
         preprocessor=FakePreprocDict(),
     )
@@ -142,7 +142,7 @@ def test_preprocessor_str_normalizes_text_path_and_spacy_ner_ok():
 
     orch = NLPOrchestrator(
         spacy_model=FakeSpacyOK(),
-        postverdad_nlp=FakePVNLP(),
+        posverdad_nlp=FakePVNLP(),
         framing_analyzer=FakeFramingAnalyzeFraming(),
         preprocessor=FakePreprocStr(),
     )
@@ -162,7 +162,7 @@ def test_preprocessor_raises_and_spacy_raises_paths_are_safe():
 
     orch = NLPOrchestrator(
         spacy_model=FakeSpacyBoom(),       # NER lanza excepción
-        postverdad_nlp=FakePVNLP(),
+        posverdad_nlp=FakePVNLP(),
         framing_analyzer=FakeFramingBoom(),  # framing lanza excepción
         preprocessor=FakePreprocBoom(),    # preproc lanza excepción
     )
@@ -209,7 +209,7 @@ def test_sentiment_derivation_various_formats(sent, expected):
 
     orch = NLPOrchestrator(
         spacy_model=None,  # sin NER
-        postverdad_nlp=PV(),
+        posverdad_nlp=PV(),
         framing_analyzer=None,
         preprocessor=None,
     )
@@ -234,7 +234,7 @@ def test_subjectivity_and_framing_paths_with_normal_values():
 
     orch = NLPOrchestrator(
         spacy_model=FakeSpacyOK(),
-        postverdad_nlp=PV(),
+        posverdad_nlp=PV(),
         framing_analyzer=FakeFramingAnalyze(),
         preprocessor=None,
     )

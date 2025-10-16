@@ -1,4 +1,4 @@
-# 🧪 Entorno — Postverdad (Ubuntu 24.04, 2025)
+# 🧪 Entorno — Posverdad (Ubuntu 24.04, 2025)
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange)](https://ubuntu.com/)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
@@ -6,7 +6,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-red)](https://redis.io/)
 
-Guía de entorno para correr **Postverdad** en Ubuntu 24.04 con Python 3.12, Docker (PostgreSQL + Redis) y NLP (spaCy + pysentimiento).
+Guía de entorno para correr **Posverdad** en Ubuntu 24.04 con Python 3.12, Docker (PostgreSQL + Redis) y NLP (spaCy + pysentimiento).
 
 ---
 
@@ -47,7 +47,7 @@ sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 ```
 
-> En `docker-compose.yml` ya se eliminó `version:` y `container_name:`. Usa `name: postverdad` y healthchecks.
+> En `docker-compose.yml` ya se eliminó `version:` y `container_name:`. Usa `name: posverdad` y healthchecks.
 
 ---
 
@@ -76,9 +76,9 @@ make install
 Copia `.env.example` a `.env` y ajusta. Ejemplo:
 
 ```dotenv
-POSTGRES_DB=postverdad
-POSTGRES_USER=postverdad
-POSTGRES_PASSWORD=postverdad
+POSTGRES_DB=posverdad
+POSTGRES_USER=posverdad
+POSTGRES_PASSWORD=posverdad
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
@@ -163,7 +163,7 @@ make coverage-html
 
 ```bash
 make scrape
-./postverdad.sh
+./posverdad.sh
 ```
 
 Con parámetros:

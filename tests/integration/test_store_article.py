@@ -12,7 +12,7 @@ pytestmark = pytest.mark.integration
 load_dotenv()
 
 DB_PARAMS = {
-    "dbname": os.getenv("POSTGRES_DB", "postverdad"),
+    "dbname": os.getenv("POSTGRES_DB", "posverdad"),
     "user": os.getenv("POSTGRES_USER", "postgres"),
     "password": os.getenv("POSTGRES_PASSWORD", "postgres"),
     "host": os.getenv("POSTGRES_HOST", "localhost"),

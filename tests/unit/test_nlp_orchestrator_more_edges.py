@@ -10,7 +10,7 @@ def test_ner_exception_safe():
     orch = NLPOrchestrator(
         spacy_model=BoomSpacy(),  # provocamos fallo en NER
         preprocessor=None,
-        postverdad_nlp=None,
+        posverdad_nlp=None,
         framing_analyzer=None,
     )
     out = orch.process("texto cualquiera")
@@ -28,7 +28,7 @@ def test_sentiment_all_none():
     orch = NLPOrchestrator(
         spacy_model=None,
         preprocessor=None,
-        postverdad_nlp=NullSent(),
+        posverdad_nlp=NullSent(),
         framing_analyzer=None,
     )
     out = orch.process("algún contenido no vacío")
@@ -44,16 +44,16 @@ def test_framing_ignored_empty_and_non_dict():
         def analyze_framing(self, text):
             return "no-es-dict"  # tipo inválido → ignorar
 
-    orch1 = NLPOrchestrator(spacy_model=None, preprocessor=None, postverdad_nlp=None, framing_analyzer=EmptyFraming())
+    orch1 = NLPOrchestrator(spacy_model=None, preprocessor=None, posverdad_nlp=None, framing_analyzer=EmptyFraming())
     out1 = orch1.process("texto 1")
     assert out1.get("framing") in ({}, None)
 
-    orch2 = NLPOrchestrator(spacy_model=None, preprocessor=None, postverdad_nlp=None, framing_analyzer=NonDictFraming())
+    orch2 = NLPOrchestrator(spacy_model=None, preprocessor=None, posverdad_nlp=None, framing_analyzer=NonDictFraming())
     out2 = orch2.process("texto 2")
     assert out2.get("framing") in ({}, None)
 
 def test_whitespace_early_return_safe():
-    orch = NLPOrchestrator(spacy_model=None, preprocessor=None, postverdad_nlp=None, framing_analyzer=None)
+    orch = NLPOrchestrator(spacy_model=None, preprocessor=None, posverdad_nlp=None, framing_analyzer=None)
     out = orch.process("   \n\t  ")  # solo blanco
 
     # Estructura mínima garantizada en early-return:

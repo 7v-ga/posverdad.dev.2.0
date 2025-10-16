@@ -1,4 +1,4 @@
-# 📰 Proyecto Postverdad
+# 📰 Proyecto Posverdad
 
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 [![Tests](https://img.shields.io/badge/tests-pytest-green)](https://docs.pytest.org/)
@@ -12,31 +12,57 @@ Sistema automatizado de extracción, análisis y clasificación de noticias de m
 ## Estructura
 
 ```plaintext
-Postverdad/
+Posverdad/
+.
+├── backlog_github.csv
+├── bootstrap_spider_tests.sh
 ├── constraints.txt
-├── .coverage
+├── CONTRIBUTING.md
 ├── .coveragerc
 ├── db
 │   ├── init_db.py
 │   ├── schema.sql
 │   └── seed_entities_aux.sql
-├── docker-compose.override.yml
 ├── docker-compose.yml
-├── .env
 ├── .env.example
 ├── .gitattributes
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   │   ├── bug.yml
+│   │   ├── config.yml
+│   │   └── feature.yml
+│   ├── labeler.yml
+│   ├── labels.yml
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows
+│       ├── autolabel.yml
+│       └── stale.yml
 ├── .gitignore
-├── .last_run
+├── import_issues.py
+├── issues.csv
+├── jobs
+│   ├── al_add_missing_canonical_links.sql
+│   ├── al_delete_alias_links.sql
+│   ├── al_prune_añias_entities.sql
+│   ├── bl_prune_orphan_entities.sql
+│   ├── bl_unlink_blocked_links.sql
+│   ├── prepare_indexes.sql
+│   ├── reconcile_aliases.sql
+│   ├── reconcile_blocklist.sql
+│   └── reconcile_runner.py
 ├── Makefile
 ├── makefiles
 │   ├── db.mk
 │   ├── env.mk
 │   ├── nlp.mk
 │   ├── notify.mk
+│   ├── reconcile.mk
 │   ├── report.mk
 │   ├── scrape.mk
 │   ├── test.mk
 │   └── util.mk
+├── package.json
+├── package-lock.json
 ├── postverdad_dash
 │   ├── postverdad_dashboard.ipynb
 │   ├── postverdad_dashboard_noviews.ipynb
@@ -90,6 +116,8 @@ Postverdad/
 │   └── wait_db.py
 ├── settings.py
 ├── setup_env.sh
+├── spider_tests
+│   └── README_tests.md
 ├── tests
 │   ├── conftest.py
 │   ├── integration
@@ -100,6 +128,16 @@ Postverdad/
 │   │   ├── test_storage.py
 │   │   ├── test_store_article_mocked.py
 │   │   └── test_store_article.py
+│   ├── spiders
+│   │   ├── conftest.py
+│   │   ├── fixtures
+│   │   │   ├── article_2023_07_12.html
+│   │   │   ├── listing_all_2023.html
+│   │   │   ├── listing_all_2025.html
+│   │   │   └── listing_mixed_2021_2025.html
+│   │   ├── test_el_mostrador_collect_first_page.py
+│   │   ├── test_el_mostrador_extract_years.py
+│   │   └── test_el_mostrador_parse_article.py
 │   └── unit
 │       ├── test_framing_llm_extra.py
 │       ├── test_heuristica_entities_unit.py
@@ -119,15 +157,28 @@ Postverdad/
 │       ├── test_preprocessor_spacy_unit.py
 │       ├── test_preprocessor_stanza_and_arrors.py
 │       ├── test_preprocessor_stanza_import.py
+│       ├── test_storage_authors.py
 │       ├── test_storage_authors_split_list.py
+│       ├── test_storage_categories.py
 │       ├── test_storage_categories_unit.py
+│       ├── test_storage_db_branching.py
 │       ├── test_storage_edge_cases.py
+│       ├── test_storage_entities.py
 │       ├── test_storage_helpers_norm_unit.py
 │       ├── test_storage_helpers_nullable.py
 │       ├── test_storage_helpers_unit.py
+│       ├── test_storage_keywords_empty.py
 │       ├── test_storage_keywords_explode.py
+│       ├── test_storage_keywords.py
+│       ├── test_storage_nullable_float_edge.py
+│       ├── test_storage_save_authors_empty.py
+│       ├── test_storage_save_framing_empty.py
 │       ├── test_storage_save_preprocessed_data_modes.py
-│       └── test_storage_save_preprocessed_unit.py
+│       ├── test_storage_save_preprocessed_unit.py
+│       ├── test_storage_store_article_on_conflict.py
+│       ├── test_storage_store_article_unkown_fallback.py
+│       ├── test_storage_store_article_unkown_source.py
+│       └── test_storage_upsert_minimal.py
 └── views
     └── postverdad_views.sql
 ```
@@ -235,9 +286,9 @@ make coverage-html   # abrir reporte HTML
 Copia `.env.example` como `.env` y ajusta:
 
 ```dotenv
-POSTGRES_DB=postverdad
-POSTGRES_USER=postverdad
-POSTGRES_PASSWORD=postverdad
+POSTGRES_DB=posverdad
+POSTGRES_USER=posverdad
+POSTGRES_PASSWORD=posverdad
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
@@ -302,7 +353,7 @@ tokenizer(..., clean_up_tokenization_spaces=True)
 ## 🚀 Ejecución automatizada
 
 ```bash
-./postverdad.sh
+./posverdad.sh
 ```
 
 Este script ejecuta: limpieza → tests → scrape → notificación.
@@ -311,7 +362,7 @@ Este script ejecuta: limpieza → tests → scrape → notificación.
 
 ## 📄 Licencia y créditos
 
-Proyecto desarrollado como parte de la investigación **Postverdad**.  
+Proyecto desarrollado como parte de la investigación **Posverdad**.  
 Por: **Gabriel Aguayo Young**  
 Contacto: [gabrielaguayo@7v.cl](mailto:gabrielaguayo@7v.cl)  
 Con herramientas de software libre.

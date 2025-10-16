@@ -1,4 +1,4 @@
--- postverdad_entities_packC_queries.sql
+-- posverdad_entities_packC_queries.sql
 -- Rango parametrizable: :start, :end (usa placeholders %(start)s, %(end)s en tu cliente)
 -- Filtrado opcional por tipos (IN) y medios (sources.name)
 

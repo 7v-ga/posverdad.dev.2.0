@@ -7,7 +7,7 @@ PYTHON  ?= $(VENV)/bin/python
 PSQL    ?= psql
 
 # DSN por defecto (puedes override al invocar: POSTVERDAD_DSN="...")
-POSTVERDAD_DSN ?= dbname=postverdad user=postgres
+POSTVERDAD_DSN ?= dbname=posverdad user=postgres
 
 # Ubicaciones
 JOBS_DIR ?= jobs

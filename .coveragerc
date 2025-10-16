@@ -27,7 +27,7 @@ omit =
     htmlcov-stanza/*
     setup_env.sh
     reset_env.sh
-    postverdad.sh
+    posverdad.sh
 
 [report]
 # Muestra líneas faltantes, no ocultes lo importante

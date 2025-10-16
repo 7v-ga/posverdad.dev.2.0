@@ -25,7 +25,7 @@ class FakePreproc:
 def test_analyze_full_ok():
     orch = NLPOrchestrator(
         spacy_model=FakeSpacy(),
-        postverdad_nlp=FakePVNLP(),
+        posverdad_nlp=FakePVNLP(),
         framing_analyzer=FakeLLM(),
         preprocessor=FakePreproc(),
     )
@@ -39,7 +39,7 @@ def test_analyze_full_ok():
 def test_analyze_empty_text_returns_defaults():
     orch = NLPOrchestrator(
         spacy_model=FakeSpacy(),
-        postverdad_nlp=FakePVNLP(),
+        posverdad_nlp=FakePVNLP(),
         framing_analyzer=FakeLLM(),
         preprocessor=FakePreproc(),
     )
@@ -62,7 +62,7 @@ def test_analyze_handles_internal_exceptions(mocker):
 
     orch = NLPOrchestrator(
         spacy_model=bad_spacy,
-        postverdad_nlp=bad_pv,
+        posverdad_nlp=bad_pv,
         framing_analyzer=bad_llm,
         preprocessor=bad_pre,
     )

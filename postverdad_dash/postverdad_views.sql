@@ -1,4 +1,4 @@
--- postverdad_views.sql
+-- posverdad_views.sql
 -- Vistas para clasificar polarity/subjectivity y métricas agregadas
 -- No ejecuta nada automáticamente; aplica en tu DB con psql u otro cliente.
 

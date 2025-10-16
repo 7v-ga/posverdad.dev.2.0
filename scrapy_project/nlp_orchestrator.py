@@ -229,7 +229,7 @@ class NLPOrchestrator:
 
     Dependencias (inyectables para tests):
       - spacy_model: str | Language | Fake (opcional)
-      - postverdad_nlp: objeto con .analyze_sentiment(text) y/o .subjectivity_proxy(text)
+      - posverdad_nlp: objeto con .analyze_sentiment(text) y/o .subjectivity_proxy(text)
       - framing_analyzer: objeto con .analyze(text) o .analyze_framing(text) -> dict
       - preprocessor: objeto con .preprocess(text) -> str | dict
     """
@@ -237,13 +237,13 @@ class NLPOrchestrator:
     def __init__(
         self,
         spacy_model: Optional[Any] = None,
-        postverdad_nlp: Optional[Any] = None,
+        posverdad_nlp: Optional[Any] = None,
         framing_analyzer: Optional[Any] = None,
         preprocessor: Optional[Any] = None,
     ):
         self._nlp = None
         self._pre = preprocessor
-        self._pv = postverdad_nlp
+        self._pv = posverdad_nlp
         self._fr = framing_analyzer
 
         # Cargar spaCy o aceptar objeto inyectado tipo Fake
@@ -293,7 +293,7 @@ class NLPOrchestrator:
         Implementación de orquestación:
           - Preprocess -> texto limpio o dict (tokens, etc.)
           - NER (spaCy) -> entities
-          - Sentiment/Subjectivity (postverdad_nlp)
+          - Sentiment/Subjectivity (posverdad_nlp)
           - Framing (framing_analyzer)
         """
         # EARLY-RETURN para texto vacío/espacios: coincide EXACTO con el test conocido

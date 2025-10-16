@@ -22,7 +22,7 @@ def test_run_nlp_falls_back_to_process_with_warning():
 
 # ---------- early-return EXACTO para texto vacío ----------
 def test_analyze_empty_text_matches_exact_structure():
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=None, framing_analyzer=None, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=None, framing_analyzer=None, preprocessor=None)
     out = o.analyze("   ")
     assert out == {
         "polarity": None,
@@ -37,7 +37,7 @@ def test_analyze_empty_text_matches_exact_structure():
 def test_preprocessor_raises_is_caught_and_skipped(monkeypatch):
     pre = MagicMock()
     pre.preprocess.side_effect = RuntimeError("boom")  # warning y continuar  # :contentReference[oaicite:2]{index=2}
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=None, framing_analyzer=None, preprocessor=pre)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=None, framing_analyzer=None, preprocessor=pre)
     out = o.analyze("texto")
     assert out["preprocessed"] == {}
     assert out["entities"] == [] and out["framing"] == {} and out["polarity"] is None
@@ -50,13 +50,13 @@ class _Doc:
 
 def test_ner_happy_path_collects_entities():
     def fake_nlp(t): return _Doc([_Ent("Chile", "LOC"), _Ent("Boric", "PER")])
-    o = NLPOrchestrator(spacy_model=fake_nlp, postverdad_nlp=None, framing_analyzer=None, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=fake_nlp, posverdad_nlp=None, framing_analyzer=None, preprocessor=None)
     out = o.analyze("Chile, Boric")
     assert {"text": "Chile", "label": "LOC"} in out["entities"] and {"text": "Boric", "label": "PER"} in out["entities"]  # :contentReference[oaicite:3]{index=3}
 
 def test_ner_exception_is_caught_and_logged():
     def bad_nlp(t): raise ValueError("NER broke")  # warning y continuar  # :contentReference[oaicite:4]{index=4}
-    o = NLPOrchestrator(spacy_model=bad_nlp, postverdad_nlp=None, framing_analyzer=None, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=bad_nlp, posverdad_nlp=None, framing_analyzer=None, preprocessor=None)
     out = o.analyze("x")
     assert out["entities"] == []
 
@@ -74,7 +74,7 @@ def test_ner_exception_is_caught_and_logged():
 def test_sentiment_derives_polarity_from_multiple_formats(sent, expected):
     pv = MagicMock()
     pv.analyze_sentiment.return_value = sent
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=pv, framing_analyzer=None, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=pv, framing_analyzer=None, preprocessor=None)
     out = o.analyze("texto")
     assert out["sentiment"] == sent
     assert pytest.approx(out["polarity"], rel=1e-6) == expected  # via _derive_polarity_from_sentiment  # :contentReference[oaicite:6]{index=6}
@@ -82,7 +82,7 @@ def test_sentiment_derives_polarity_from_multiple_formats(sent, expected):
 def test_sentiment_exception_is_caught():
     pv = MagicMock()
     pv.analyze_sentiment.side_effect = RuntimeError("predict fail")  # warning  # :contentReference[oaicite:7]{index=7}
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=pv, framing_analyzer=None, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=pv, framing_analyzer=None, preprocessor=None)
     out = o.analyze("x")
     assert out["polarity"] is None and out["sentiment"] is None
 
@@ -91,7 +91,7 @@ def test_subjectivity_string_numeric_is_converted():
     pv = MagicMock()
     pv.analyze_sentiment.return_value = None
     pv.subjectivity_proxy.return_value = "0.42"   # conv. numérica  # :contentReference[oaicite:8]{index=8}
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=pv, framing_analyzer=None, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=pv, framing_analyzer=None, preprocessor=None)
     out = o.analyze("texto")
     assert out["subjectivity"] == pytest.approx(0.42, rel=1e-6)
 
@@ -100,20 +100,20 @@ def test_framing_prefers_analyze_framing_and_accepts_non_empty_dict():
     fr = MagicMock()
     fr.analyze_framing.return_value = {"ideological_frame": "x"}  # prioridad sobre analyze  # :contentReference[oaicite:9]{index=9}
     fr.analyze.return_value = {"ideological_frame": "y"}
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=None, framing_analyzer=fr, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=None, framing_analyzer=fr, preprocessor=None)
     out = o.analyze("texto")
     assert out["framing"] == {"ideological_frame": "x"}
 
 def test_framing_ignores_empty_dict_and_catches_exception():
     fr = MagicMock()
     fr.analyze_framing.return_value = {}          # dict vacío → ignorar
-    o = NLPOrchestrator(spacy_model=None, postverdad_nlp=None, framing_analyzer=fr, preprocessor=None)
+    o = NLPOrchestrator(spacy_model=None, posverdad_nlp=None, framing_analyzer=fr, preprocessor=None)
     out = o.analyze("texto")
     assert out["framing"] == {}
 
     fr2 = MagicMock()
     fr2.analyze_framing.side_effect = RuntimeError("framing boom")  # warning ruta excepción  # :contentReference[oaicite:10]{index=10}
-    o2 = NLPOrchestrator(spacy_model=None, postverdad_nlp=None, framing_analyzer=fr2, preprocessor=None)
+    o2 = NLPOrchestrator(spacy_model=None, posverdad_nlp=None, framing_analyzer=fr2, preprocessor=None)
     out2 = o2.analyze("texto")
     assert out2["framing"] == {}
 
@@ -135,7 +135,7 @@ def test_preprocessor_dict_with_text_is_used_downstream():
     fr = MagicMock()
     fr.analyze_framing.side_effect = lambda t: called.__setitem__("fr", t) or {"ideological_frame": "x"}
 
-    o = NLPOrchestrator(spacy_model=fake_nlp, postverdad_nlp=pv, framing_analyzer=fr, preprocessor=pre)
+    o = NLPOrchestrator(spacy_model=fake_nlp, posverdad_nlp=pv, framing_analyzer=fr, preprocessor=pre)
     out = o.analyze("texto original")
 
     # Se usó "LIMPIO" en todas las etapas downstream
@@ -170,7 +170,7 @@ def test_preprocessor_dict_without_text_falls_back_to_original_text():
     fr = MagicMock()
     fr.analyze_framing.side_effect = lambda t: called.__setitem__("fr", t) or {}
 
-    o = NLPOrchestrator(spacy_model=fake_nlp, postverdad_nlp=pv, framing_analyzer=fr, preprocessor=pre)
+    o = NLPOrchestrator(spacy_model=fake_nlp, posverdad_nlp=pv, framing_analyzer=fr, preprocessor=pre)
     out = o.analyze("texto ORIG")
 
     # Como no hubo 'text' en el dict, se usa el original

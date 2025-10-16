@@ -1,5 +1,5 @@
 -- ===============================================
--- Postverdad — schema.sql (NORMALIZADO + REPORTING)
+-- Posverdad — schema.sql (NORMALIZADO + REPORTING)
 -- ===============================================
 
 -- ===============================================

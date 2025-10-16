@@ -17,7 +17,7 @@ db_url = (
 engine = create_engine(db_url)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="📊 Reporte de ejecuciones NLP Postverdad")
+    parser = argparse.ArgumentParser(description="📊 Reporte de ejecuciones NLP Posverdad")
     parser.add_argument("--desde", type=str, help="Fecha mínima (YYYY-MM-DD)")
     parser.add_argument("--hasta", type=str, help="Fecha máxima (YYYY-MM-DD)")
     parser.add_argument("--export", type=str, help="Ruta para exportar CSV")

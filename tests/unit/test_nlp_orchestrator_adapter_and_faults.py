@@ -18,7 +18,7 @@ def test_orchestrator_preprocessor_fault_tolerant(caplog):
         def preprocess(self, t): raise TypeError("bad pre")
     orch = NLPOrchestrator(
         preprocessor=BoomPre(),
-        spacy_model=None, postverdad_nlp=None, framing_analyzer=None
+        spacy_model=None, posverdad_nlp=None, framing_analyzer=None
     )
     out = orch.process("texto cualquiera")
     # No rompe y devuelve estructura segura
@@ -41,7 +41,7 @@ def test_orchestrator_uses_analyze_framing_when_available():
 
     from scrapy_project.nlp_orchestrator import NLPOrchestrator
     orch = NLPOrchestrator(
-        spacy_model=None, postverdad_nlp=None,
+        spacy_model=None, posverdad_nlp=None,
         preprocessor=None, framing_analyzer=DummyFraming()
     )
     out = orch.process("texto cualquiera")

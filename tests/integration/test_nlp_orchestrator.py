@@ -12,9 +12,9 @@ class TestNLPOrchestrator(unittest.TestCase):
         self.mock_spacy = MagicMock()
         self.mock_spacy.return_value.ents = []
 
-        self.mock_postverdad_nlp = MagicMock()
-        self.mock_postverdad_nlp.analyze_sentiment.return_value = (0.5, "NEUTRAL")
-        self.mock_postverdad_nlp.subjectivity_proxy.return_value = 0.6
+        self.mock_posverdad_nlp = MagicMock()
+        self.mock_posverdad_nlp.analyze_sentiment.return_value = (0.5, "NEUTRAL")
+        self.mock_posverdad_nlp.subjectivity_proxy.return_value = 0.6
 
         self.mock_framing = MagicMock()
         self.mock_framing.analyze_framing.return_value = {"ideological_frame": "neutral"}
@@ -24,7 +24,7 @@ class TestNLPOrchestrator(unittest.TestCase):
 
         self.orchestrator = NLPOrchestrator(
             spacy_model=self.mock_spacy,
-            postverdad_nlp=self.mock_postverdad_nlp,
+            posverdad_nlp=self.mock_posverdad_nlp,
             framing_analyzer=self.mock_framing,
             preprocessor=self.mock_preprocessor
         )

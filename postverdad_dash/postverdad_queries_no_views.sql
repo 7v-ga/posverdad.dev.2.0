@@ -1,4 +1,4 @@
--- postverdad_queries_no_views.sql
+-- posverdad_queries_no_views.sql
 -- Consultas de referencia SIN vistas. Puedes pegarlas en tu cliente SQL.
 
 -- 1) Articles + labels/buckets (derivación en SQL puro)

@@ -1,5 +1,5 @@
 -- seed_entities_aux.sql
--- Postverdad — Seed inicial para tablas auxiliares de Entities
+-- Posverdad — Seed inicial para tablas auxiliares de Entities
 -- Ejecutar después de crear el esquema (schema.sql).
 -- Uso sugerido:
 --   psql "$DATABASE_URL" -f seed_entities_aux.sql

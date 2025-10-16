@@ -18,7 +18,7 @@ from .nlp_orchestrator import NLPOrchestrator
 from .storage_helpers import store_article, save_entities, save_framing, _infer_domain_from_url
 
 # === NLP locales
-from .nlp_transformers import PostverdadNLP
+from .nlp_transformers import PosverdadNLP
 from .preprocessor import Preprocessor
 try:
     import spacy
@@ -45,16 +45,16 @@ MAX_DUPLICATES_TOTAL = int(os.getenv("MAX_DUPLICATES_TOTAL", "0"))
 
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-POSTGRES_DB = os.getenv("POSTGRES_DB", "postverdad")
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postverdad")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postverdad")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "posverdad")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "posverdad")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "posverdad")
 
 # Logger “humano”
 RUN_TS = datetime.now().strftime("%Y%m%d-%H%M%S")
 RUN_ID = f"{RUN_TS}-{uuid.uuid4().hex[:8]}"
 LOG_HUMAN = os.path.join(LOGS_DIR, f"pipeline_{RUN_ID}.log")
 
-logger = logging.getLogger("postverdad.pipeline")
+logger = logging.getLogger("posverdad.pipeline")
 logger.setLevel(logging.DEBUG)
 
 _file_handler = logging.FileHandler(LOG_HUMAN, mode="a", encoding="utf-8")
@@ -123,13 +123,13 @@ class ScrapyProjectPipeline:
         # =========================
         # A1: Inyección de backends locales (con fallback)
         # =========================
-        postverdad = None
+        posverdad = None
         try:
-            postverdad = PostverdadNLP(nlp_model=spacy_model)
-            logger.info("[NLP] PostverdadNLP inicializado (pysentimiento + spaCy).")
+            posverdad = PosverdadNLP(nlp_model=spacy_model)
+            logger.info("[NLP] PosverdadNLP inicializado (pysentimiento + spaCy).")
         except Exception as e:
-            logger.warning(f"[NLP] PostverdadNLP no disponible: {e}")
-            postverdad = None
+            logger.warning(f"[NLP] PosverdadNLP no disponible: {e}")
+            posverdad = None
 
         preproc = None
         try:
@@ -142,7 +142,7 @@ class ScrapyProjectPipeline:
         # Orquestador con dependencias inyectadas
         self.nlp = NLPOrchestrator(
             spacy_model=spacy_model,
-            postverdad_nlp=postverdad,
+            posverdad_nlp=posverdad,
             preprocessor=preproc,
             framing_analyzer=None,  # activable más adelante sin coste de API
         )
@@ -513,7 +513,7 @@ class ScrapyProjectPipeline:
         except DropItem as e:
             self.discarded += 1
             self.discarded_invalid += 1
-            self._bump("postverdad/discarded_invalid", 1)
+            self._bump("posverdad/discarded_invalid", 1)
             url = (item.get("url") or "").strip()
             body_len = len((item.get("body") or "").strip())
             logger.info(
@@ -550,7 +550,7 @@ class ScrapyProjectPipeline:
                     if dup_reason:
                         self.discarded += 1
                         self.discarded_duplicates += 1
-                        self._bump("postverdad/discarded_duplicates", 1)
+                        self._bump("posverdad/discarded_duplicates", 1)
                         self.duplicates_in_a_row += 1
                         
                         # Corte por total de duplicados
@@ -722,13 +722,13 @@ class ScrapyProjectPipeline:
                 # Nuevo → reset streak y contadores
                 self.duplicates_in_a_row = 0
                 self.inserted += 1
-                self._bump("postverdad/inserted", 1)
+                self._bump("posverdad/inserted", 1)
                 logger.info("[✔] commit realizado (nuevo)")
                 logger.info(f"✅ Artículo NUEVO: {item['article_id']} — {title[:80]}")
             else:
                 # Existente (upsert por conflicto) → cuenta como “updated”
                 self.updated += 1
-                self._bump("postverdad/updated", 1)
+                self._bump("posverdad/updated", 1)
                 # OJO: la racha de duplicados la gestiona EXCLUSIVAMENTE el branch de drop duplicado
                 logger.info(f"[↩] Artículo ya existente (update por conflicto).")
 

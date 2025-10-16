@@ -25,7 +25,7 @@ LOG_LEVEL = "INFO"
 
 
 # Variables de entorno para conexión PostgreSQL
-POSTGRES_DB = os.getenv("POSTGRES_DB", "postverdad")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "posverdad")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
@@ -40,7 +40,7 @@ CONCURRENT_REQUESTS = int(os.getenv("CONCURRENT_REQUESTS", "8"))
 
 # Headers por defecto (opcional)
 # DEFAULT_REQUEST_HEADERS = {
-#     "User-Agent": "Mozilla/5.0 (compatible; PostverdadBot/1.0; +http://postverdad.local)",
+#     "User-Agent": "Mozilla/5.0 (compatible; PosverdadBot/1.0; +http://posverdad.local)",
 #     "Accept-Language": "es-ES,es;q=0.9",
 # }
 

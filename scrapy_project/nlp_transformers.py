@@ -4,7 +4,7 @@
 from pysentimiento import create_analyzer
 
 
-class PostverdadNLP:
+class PosverdadNLP:
     """
     Clase que encapsula análisis de sentimiento y una estimación heurística de subjetividad
     usando modelos entrenados para español. Se apoya en pysentimiento para sentimiento

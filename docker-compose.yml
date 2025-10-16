@@ -1,22 +1,22 @@
-# docker-compose.yml — Postverdad
+# docker-compose.yml — Posverdad
 # Ejecuta: docker compose -f docker-compose.yml up -d
 
-name: postverdad
+name: posverdad
 
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-postverdad}
-      POSTGRES_USER: ${POSTGRES_USER:-postverdad}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postverdad}
+      POSTGRES_DB: ${POSTGRES_DB:-posverdad}
+      POSTGRES_USER: ${POSTGRES_USER:-posverdad}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-posverdad}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postverdad} -d ${POSTGRES_DB:-postverdad} || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-posverdad} -d ${POSTGRES_DB:-posverdad} || exit 1"]
       interval: 3s
       timeout: 3s
       retries: 30

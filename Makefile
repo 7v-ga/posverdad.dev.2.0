@@ -1,5 +1,5 @@
 # =============================================================================
-# Makefile — Postverdad (raíz)
+# Makefile — Posverdad (raíz)
 # =============================================================================
 # Uso:
 #   make help
@@ -12,7 +12,7 @@ SHELL := /bin/bash
 MAKEFLAGS += --no-builtin-rules --no-print-directory
 
 # Proyecto (opcional)
-PROJECT        ?= postverdad
+PROJECT        ?= posverdad
 PYTHON         ?= python3
 
 # Archivos clave que algunos .mk usan

@@ -1,6 +1,6 @@
-# 🔼 Guía de actualización — Postverdad (Ubuntu 24.04 / Python 3.12)
+# 🔼 Guía de actualización — Posverdad (Ubuntu 24.04 / Python 3.12)
 
-Esta guía explica **qué cambió**, **cómo actualizar tu entorno** y **qué rupturas** debes considerar al migrar a la versión actual de Postverdad.
+Esta guía explica **qué cambió**, **cómo actualizar tu entorno** y **qué rupturas** debes considerar al migrar a la versión actual de Posverdad.
 
 ---
 

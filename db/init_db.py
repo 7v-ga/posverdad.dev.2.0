@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# init_db.py — reset y creación de esquema para Postverdad
+# init_db.py — reset y creación de esquema para Posverdad
 # Soporta:
 #   --reset           : Borra todo antes de crear (con confirmación)
 #   --no-confirm      : Omite confirmación (o usa env FORCE_RESET=1)
@@ -19,9 +19,9 @@ from pathlib import Path
 load_dotenv()
 
 DB_PARAMS = {
-    "dbname": os.getenv("POSTGRES_DB", "postverdad"),
-    "user": os.getenv("POSTGRES_USER", "postverdad"),
-    "password": os.getenv("POSTGRES_PASSWORD", "postverdad"),
+    "dbname": os.getenv("POSTGRES_DB", "posverdad"),
+    "user": os.getenv("POSTGRES_USER", "posverdad"),
+    "password": os.getenv("POSTGRES_PASSWORD", "posverdad"),
     "host": os.getenv("POSTGRES_HOST", "localhost"),
     "port": os.getenv("POSTGRES_PORT", "5432"),
 }

@@ -1,4 +1,4 @@
-from scrapy_project.nlp_transformers import PostverdadNLP
+from scrapy_project.nlp_transformers import PosverdadNLP
 
 class FakeAnalyzer:
     def predict(self, text):
@@ -27,24 +27,24 @@ class FakeSpacy:
         return doc
 
 def test_analyze_sentiment_returns_none_when_no_analyzer():
-    nlp = PostverdadNLP(nlp_model=None)
+    nlp = PosverdadNLP(nlp_model=None)
     # Forzamos que el analyzer sea None
     nlp.sa = None
     assert nlp.analyze_sentiment("texto") == (None, None)
 
 def test_analyze_sentiment_ok():
-    nlp = PostverdadNLP(nlp_model=None)
+    nlp = PosverdadNLP(nlp_model=None)
     nlp.sa = FakeAnalyzer()
     pol, score = nlp.analyze_sentiment("buen día")
     assert pol == 1.0 and 0.0 <= score <= 1.0
 
 def test_subjectivity_proxy_none_when_no_spacy_or_blank():
-    nlp = PostverdadNLP(nlp_model=None)
+    nlp = PosverdadNLP(nlp_model=None)
     assert nlp.subjectivity_proxy("   ") is None
     assert nlp.subjectivity_proxy("texto") is None  # no hay spacy
 
 def test_subjectivity_proxy_ok():
-    nlp = PostverdadNLP(nlp_model=FakeSpacy())
+    nlp = PosverdadNLP(nlp_model=FakeSpacy())
     val = nlp.subjectivity_proxy("algo de texto")
     # 2/4 = 0.5
     assert val == 0.5
