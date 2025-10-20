@@ -1,8 +1,12 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+// next.config.ts
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
   typedRoutes: true,
   turbopack: {
-    root: __dirname, // fuerza /frontend como raíz
+    // Fuerza que /frontend sea la raíz del workspace para Turbopack
+    root: process.cwd(),
   },
-};
-export default nextConfig;
+}
+
+export default nextConfig
