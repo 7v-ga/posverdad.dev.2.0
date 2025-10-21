@@ -1,20 +1,36 @@
+# actions/labeler@v5 format (each label → list of rules)
+
 area/frontend:
-  - "frontend/**"
-  - "**/*.tsx"
-  - "**/*.jsx"
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'frontend/**'
 
-area/backend:
-  - "backend/**"
-  - "api/**"
-  - "**/*.py"
-  - "**/*.go"
-  - "**/*.rb"
+fe-p1:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'frontend/src/app/articles/**'
+          - 'frontend/src/lib/**'
+          - 'frontend/src/store/**'
 
-area/data:
-  - "sql/**"
-  - "migrations/**"
-  - "db/**"
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
 
-type/docs:
-  - "**/*.md"
-  - "docs/**"
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - '**/*.yml'
+          - '**/*.yaml'
+
+scripts:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'scripts/**'
+
+scraping:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'scrapy_project/**'
