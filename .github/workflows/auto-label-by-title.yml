@@ -1,0 +1,82 @@
+name: Auto label by title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label-by-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply labels from PR title / commits
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request
+            const prNumber = pr.number
+            const repo = context.repo
+            const title = pr.title || ''
+            const body = pr.body || ''
+
+            // Si el título no dice mucho, mira el último commit
+            let headMessage = ''
+            try {
+              const { data: commits } = await github.rest.pulls.listCommits({
+                owner: repo.owner,
+                repo: repo.repo,
+                pull_number: prNumber,
+                per_page: 1,
+                page: 1
+              })
+              headMessage = commits?.[0]?.commit?.message || ''
+            } catch (e) {
+              // ignore
+            }
+
+            const text = `${title}\n${body}\n${headMessage}`.toLowerCase()
+
+            /** Mapeo (usa solo labels ya existentes en tu repo) */
+            const map = [
+              { re: /^(feat)(\(.+\))?:\s|(^|\n)feat:/, label: 'type/feature' },
+              { re: /^(fix)(\(.+\))?:\s|(^|\n)fix:/, label: 'type/bug' },
+              { re: /^(docs)(\(.+\))?:\s|(^|\n)docs:/, label: 'docs' },
+              { re: /^(ci)(\(.+\))?:\s|(^|\n)ci:/, label: 'type/ci' },
+              // agrupa refactor/perf/test como chore (puedes crear labels específicos si luego quieres)
+              { re: /^(chore|refactor|perf|test)(\(.+\))?:\s|(^|\n)(chore|refactor|perf|test):/, label: 'type/chore' },
+            ]
+
+            const toAdd = new Set()
+
+            // Prioridades [P1]/[P2]/[P3] en título o body
+            if (/\[p1\]/i.test(text)) toAdd.add('priority/P1')
+            if (/\[p2\]/i.test(text)) toAdd.add('priority/P2')
+            if (/\[p3\]/i.test(text)) toAdd.add('priority/P3')
+
+            for (const { re, label } of map) {
+              if (re.test(text)) toAdd.add(label)
+            }
+
+            if (toAdd.size === 0) {
+              core.info('No matching labels from title/commits.')
+              return
+            }
+
+            // Añadir etiquetas (ignora las que ya están)
+            const current = pr.labels?.map(l => l.name) || []
+            const final = [...toAdd].filter(l => !current.includes(l))
+
+            if (final.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: repo.owner,
+                repo: repo.repo,
+                issue_number: prNumber,
+                labels: final
+              })
+              core.info(`Added labels: ${final.join(', ')}`)
+            } else {
+              core.info('All labels already present.')
+            }
