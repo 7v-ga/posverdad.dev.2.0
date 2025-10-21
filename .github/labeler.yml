@@ -1,20 +1,18 @@
-area/frontend:
-  - "frontend/**"
-  - "**/*.tsx"
-  - "**/*.jsx"
-
-area/backend:
-  - "backend/**"
-  - "api/**"
-  - "**/*.py"
-  - "**/*.go"
-  - "**/*.rb"
-
-area/data:
-  - "sql/**"
-  - "migrations/**"
-  - "db/**"
-
-type/docs:
-  - "**/*.md"
-  - "docs/**"
+# Labels por paths
+frontend:
+  - 'frontend/**'
+fe-p1:
+  - 'frontend/src/app/articles/**'
+  - 'frontend/src/lib/**'
+  - 'frontend/src/store/**'
+docs:
+  - '**/*.md'
+  - 'docs/**'
+config:
+  - '.github/**'
+  - '**/*.yml'
+  - '**/*.yaml'
+scripts:
+  - 'scripts/**'
+scraping:
+  - 'scrapy_project/**'
