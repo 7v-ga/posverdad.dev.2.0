@@ -1,5 +1,3 @@
-# actions/labeler@v5 format (each label → list of rules)
-
 area/frontend:
   - changed-files:
       - any-glob-to-any-file:
