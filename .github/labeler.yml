@@ -1,18 +1,36 @@
-# Labels por paths
-frontend:
-  - 'frontend/**'
+# actions/labeler@v5 format (each label → list of rules)
+
+area/frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'frontend/**'
+
 fe-p1:
-  - 'frontend/src/app/articles/**'
-  - 'frontend/src/lib/**'
-  - 'frontend/src/store/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'frontend/src/app/articles/**'
+          - 'frontend/src/lib/**'
+          - 'frontend/src/store/**'
+
 docs:
-  - '**/*.md'
-  - 'docs/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
+
 config:
-  - '.github/**'
-  - '**/*.yml'
-  - '**/*.yaml'
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - '**/*.yml'
+          - '**/*.yaml'
+
 scripts:
-  - 'scripts/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'scripts/**'
+
 scraping:
-  - 'scrapy_project/**'
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'scrapy_project/**'
