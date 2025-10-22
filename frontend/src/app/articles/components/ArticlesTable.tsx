@@ -8,6 +8,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  RowSelectionState,
   SortingState,
   VisibilityState,
   useReactTable,
@@ -27,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import { formatDate } from '@/lib/utils'
 import { toCSV, downloadCSV } from '@/lib/csv'
@@ -39,15 +41,21 @@ const selectItems = (s: Store) => s.items
 const selectFilters = (s: Store) => s.filters
 const selectSelect = (s: Store) => s.select
 const selectSelection = (s: Store) => s.selection
+const updateEntity = (s: Store) => s.updateEntity
+const addAlias = (s: Store) => s.addAlias
 
 const PAGE_SIZE_KEY = 'postverdad-pageSize-v1'
 const COLS_KEY = 'postverdad-cols-v1'
+
+const FEATURE_BULK = process.env['NEXT_PUBLIC_FEATURE_BULK'] === '1'
 
 export default function ArticlesTable() {
   const items = useArticlesStore(selectItems)
   const filters = useArticlesStore(selectFilters)
   const select = useArticlesStore(selectSelect)
   const selection = useArticlesStore(selectSelection)
+  const mutateEntity = useArticlesStore(updateEntity)
+  const addAliasToEntity = useArticlesStore(addAlias)
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [entitiesOpen, setEntitiesOpen] = React.useState(false)
@@ -66,6 +74,9 @@ export default function ArticlesTable() {
       return {}
     }
   })
+
+  // Selección de filas (solo cuando la flag está activa)
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
 
   React.useEffect(() => {
     localStorage.setItem(PAGE_SIZE_KEY, String(pageSize))
@@ -95,7 +106,7 @@ export default function ArticlesTable() {
 
   // Definición de columnas
   const columns = React.useMemo<ColumnDef<Article>[]>(() => {
-    return [
+    const base: ColumnDef<Article>[] = [
       {
         accessorKey: 'title',
         header: 'Título',
@@ -140,15 +151,50 @@ export default function ArticlesTable() {
         ),
       },
     ]
+
+    if (!FEATURE_BULK) return base
+      
+    return [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+            aria-label="Seleccionar todos (página)"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(v) => row.toggleSelected(!!v)}
+            aria-label="Seleccionar fila"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 32,
+      },
+      ...base, // ✅ nada más acá
+    ]
+    
   }, [select])
 
   // Instancia de TanStack Table
   const table = useReactTable({
     data: filtered,
     columns,
-    state: { sorting, columnVisibility },
+    state: {
+      sorting,
+      columnVisibility,
+      ...(FEATURE_BULK ? { rowSelection } : {}),
+    },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
+    ...(FEATURE_BULK ? { onRowSelectionChange: setRowSelection, enableRowSelection: true } : {}),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -163,10 +209,50 @@ export default function ArticlesTable() {
 
   const hasRows = table.getRowModel().rows.length > 0
 
+  // Helpers Bulk (mock)
+  const selectedRows = FEATURE_BULK
+    ? table.getRowModel().rows.filter((r) => r.getIsSelected())
+    : []
+  const selectedCount = selectedRows.length
+
+  const bulkBlock = (blocked: boolean) => {
+    if (!FEATURE_BULK || selectedCount === 0) return
+    for (const r of selectedRows) {
+      const a = r.original
+      for (const e of a.entities) {
+        mutateEntity(a.id, e.id, { blocked })
+      }
+    }
+    // Simple feedback (si tienes shadcn toast, cámbialo por toast())
+    alert(`${blocked ? 'Bloqueadas' : 'Desbloqueadas'} entidades de ${selectedCount} artículo(s).`)
+  }
+
+  const bulkAddAlias = () => {
+    if (!FEATURE_BULK || selectedCount === 0) return
+    const alias = window.prompt('Alias a agregar (se aplicará a TODAS las entidades de la selección):')
+    if (!alias) return
+    const v = alias.trim()
+    if (!v) return
+    for (const r of selectedRows) {
+      const a = r.original
+      for (const e of a.entities) {
+        addAliasToEntity(a.id, e.id, v)
+      }
+    }
+    alert(`Alias “${v}” agregado a entidades de ${selectedCount} artículo(s).`)
+  }
+
   return (
     <Card className="p-2">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 p-2">
+        {/* Beta (flag) */}
+        {FEATURE_BULK && (
+          <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+            Beta
+          </Badge>
+        )}
+
         {/* pageSize */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Filas por página</span>
@@ -198,7 +284,7 @@ export default function ArticlesTable() {
         <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
           {table
             .getAllLeafColumns()
-            .filter((c) => c.id !== 'actions')
+            .filter((c) => c.id !== 'actions' && c.id !== 'select') // no toggle para acciones/checkbox
             .map((col) => (
               <label key={col.id} className="inline-flex items-center gap-1">
                 <input
@@ -213,25 +299,60 @@ export default function ArticlesTable() {
         </div>
       </div>
 
+      {/* Bulk actions bar (solo con flag y con selección) */}
+      {FEATURE_BULK && (
+        <div className="flex items-center justify-between gap-2 px-2 pb-2">
+          <div className="text-xs text-muted-foreground">
+            Seleccionados: <Badge variant="secondary">{selectedCount}</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={selectedCount === 0} onClick={() => bulkBlock(true)}>
+              Bloquear entidades
+            </Button>
+            <Button variant="outline" size="sm" disabled={selectedCount === 0} onClick={() => bulkBlock(false)}>
+              Desbloquear entidades
+            </Button>
+            <Button size="sm" disabled={selectedCount === 0} onClick={bulkAddAlias}>
+              Agregar alias…
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Tabla */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
-                {hg.headers.map((h) => (
-                  <th key={h.id} className="text-left px-3 py-2">
-                    {h.isPlaceholder ? null : (
-                      <button
-                        onClick={h.column.getToggleSortingHandler()}
-                        className="inline-flex items-center gap-1"
-                      >
-                        {flexRender(h.column.columnDef.header, h.getContext())}
-                        {{ asc: '▲', desc: '▼' }[h.column.getIsSorted() as string] ?? ''}
-                      </button>
-                    )}
-                  </th>
-                ))}
+                {hg.headers.map((h) => {
+                  const canSort = h.column.getCanSort()
+                  const headerContent = h.isPlaceholder
+                    ? null
+                    : flexRender(h.column.columnDef.header, h.getContext())
+                
+                  // ✅ evitar objeto inline en JSX
+                  const sortState = h.column.getIsSorted() as false | 'asc' | 'desc'
+                  const indicator = sortState === 'asc' ? '▲' : sortState === 'desc' ? '▼' : ''
+                
+                  return (
+                    <th key={h.id} className="text-left px-3 py-2">
+                      {h.isPlaceholder ? null : canSort ? (
+                        <button
+                          onClick={h.column.getToggleSortingHandler()}
+                          className="inline-flex items-center gap-1"
+                        >
+                          {headerContent}
+                          {indicator}
+                        </button>
+                      ) : (
+                        <div className="inline-flex items-center gap-1">
+                          {headerContent}
+                        </div>
+                      )}
+                    </th>
+                  )
+                })}
               </tr>
             ))}
           </thead>

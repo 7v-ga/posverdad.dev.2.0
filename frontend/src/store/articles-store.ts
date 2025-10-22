@@ -82,3 +82,9 @@ export const useArticlesStore = create<ArticlesState & ArticlesActions>()(
     { name: 'postverdad-articles' }
   )
 )
+
+// Solo para QA manual; no afecta producción
+if (typeof window !== 'undefined') {
+  // @ts-expect-error
+  window.__articlesStore = useArticlesStore
+}
