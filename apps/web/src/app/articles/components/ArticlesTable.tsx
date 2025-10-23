@@ -15,6 +15,7 @@ import type {
   SortingState,
   VisibilityState,
 } from '@tanstack/react-table'
+
 import { useArticlesStore } from '@/store/articles-store'
 import type { ArticlesState, ArticlesActions } from '@/store/articles-store'
 import type { Article } from '@/lib/schemas'
@@ -42,8 +43,8 @@ const selectItems = (s: Store) => s.items
 const selectFilters = (s: Store) => s.filters
 const selectSelect = (s: Store) => s.select
 const selectSelection = (s: Store) => s.selection
-const updateEntity = (s: Store) => s.updateEntity
-const addAlias = (s: Store) => s.addAlias
+const selectUpdateEntity = (s: Store) => s.updateEntity
+const selectAddAlias = (s: Store) => s.addAlias
 
 const PAGE_SIZE_KEY = 'postverdad-pageSize-v1'
 const COLS_KEY = 'postverdad-cols-v1'
@@ -55,8 +56,8 @@ export default function ArticlesTable() {
   const filters = useArticlesStore(selectFilters)
   const select = useArticlesStore(selectSelect)
   const selection = useArticlesStore(selectSelection)
-  const mutateEntity = useArticlesStore(updateEntity)
-  const addAliasToEntity = useArticlesStore(addAlias)
+  const updateEntity = useArticlesStore(selectUpdateEntity)
+  const addAlias = useArticlesStore(selectAddAlias)
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [entitiesOpen, setEntitiesOpen] = React.useState(false)
@@ -87,18 +88,21 @@ export default function ArticlesTable() {
     localStorage.setItem(COLS_KEY, JSON.stringify(columnVisibility))
   }, [columnVisibility])
 
-  // Filtro en cliente
+  // Filtro en cliente (protege nullables)
   const filtered = React.useMemo(() => {
     const q = filters.q.toLowerCase()
     return items.filter((a) => {
+      const pol = a.polarity ?? 0
+      const sub = a.subjectivity ?? 0
+
       if (q && !(`${a.title} ${a.url}`.toLowerCase().includes(q))) return false
       if (filters.sources.length && !filters.sources.includes(a.source)) return false
       if (filters.lenMin != null && a.len_chars < filters.lenMin) return false
       if (filters.lenMax != null && a.len_chars > filters.lenMax) return false
-      if (filters.polMin != null && a.polarity < filters.polMin) return false
-      if (filters.polMax != null && a.polarity > filters.polMax) return false
-      if (filters.subMin != null && a.subjectivity < filters.subMin) return false
-      if (filters.subMax != null && a.subjectivity > filters.subMax) return false
+      if (filters.polMin != null && pol < filters.polMin) return false
+      if (filters.polMax != null && pol > filters.polMax) return false
+      if (filters.subMin != null && sub < filters.subMin) return false
+      if (filters.subMax != null && sub > filters.subMax) return false
       if (filters.dateFrom && new Date(a.published_at) < new Date(filters.dateFrom)) return false
       if (filters.dateTo && new Date(a.published_at) > new Date(filters.dateTo)) return false
       return true
@@ -154,7 +158,7 @@ export default function ArticlesTable() {
     ]
 
     if (!FEATURE_BULK) return base
-      
+
     return [
       {
         id: 'select',
@@ -179,9 +183,8 @@ export default function ArticlesTable() {
         enableHiding: false,
         size: 32,
       },
-      ...base, // ✅ nada más acá
+      ...base,
     ]
-    
   }, [select])
 
   // Instancia de TanStack Table
@@ -221,10 +224,9 @@ export default function ArticlesTable() {
     for (const r of selectedRows) {
       const a = r.original
       for (const e of a.entities) {
-        mutateEntity(a.id, e.id, { blocked })
+        updateEntity(a.id, e.id, { blocked })
       }
     }
-    // Simple feedback (si tienes shadcn toast, cámbialo por toast())
     alert(`${blocked ? 'Bloqueadas' : 'Desbloqueadas'} entidades de ${selectedCount} artículo(s).`)
   }
 
@@ -237,7 +239,7 @@ export default function ArticlesTable() {
     for (const r of selectedRows) {
       const a = r.original
       for (const e of a.entities) {
-        addAliasToEntity(a.id, e.id, v)
+        addAlias(a.id, e.id, v)
       }
     }
     alert(`Alias “${v}” agregado a entidades de ${selectedCount} artículo(s).`)
@@ -285,7 +287,7 @@ export default function ArticlesTable() {
         <div className="ml-auto flex flex-wrap items-center gap-2 text-xs">
           {table
             .getAllLeafColumns()
-            .filter((c) => c.id !== 'actions' && c.id !== 'select') // no toggle para acciones/checkbox
+            .filter((c) => c.id !== 'actions' && c.id !== 'select')
             .map((col) => (
               <label key={col.id} className="inline-flex items-center gap-1">
                 <input
@@ -331,11 +333,10 @@ export default function ArticlesTable() {
                   const headerContent = h.isPlaceholder
                     ? null
                     : flexRender(h.column.columnDef.header, h.getContext())
-                
-                  // ✅ evitar objeto inline en JSX
+
                   const sortState = h.column.getIsSorted() as false | 'asc' | 'desc'
                   const indicator = sortState === 'asc' ? '▲' : sortState === 'desc' ? '▼' : ''
-                
+
                   return (
                     <th key={h.id} className="text-left px-3 py-2">
                       {h.isPlaceholder ? null : canSort ? (
