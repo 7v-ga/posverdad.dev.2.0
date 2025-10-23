@@ -5,7 +5,7 @@ Asegurar que lo principal no se rompa entre merges.
 Añadir **smoke e2e** con Playwright: carga `/articles`, aplica filtro, exporta CSV.
 
 ## Cambios incluidos
-- `frontend/e2e/playwright.config.ts`
+- `apps/web/e2e/playwright.config.ts`
 - Test `articles.smoke.spec.ts` con:
   - Carga página
   - Escribe en búsqueda (debounce)

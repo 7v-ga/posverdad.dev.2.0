@@ -75,3 +75,4 @@ docker-compose.override.yml
 
 # Por si alguien creó un archivo con este nombre raro
 __pycache__.pyc
+node_modules

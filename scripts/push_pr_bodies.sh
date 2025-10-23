@@ -59,7 +59,7 @@ Reorganizar en monorepo liviano con carpetas top-level.
 ## Cambios incluidos
 - Estructura:
   ```
-  /frontend
+  /apps/web
   /api
   /db
   /jobs
@@ -71,7 +71,7 @@ Reorganizar en monorepo liviano con carpetas top-level.
 - Ajustes de paths en documentación
 
 ## Acceptance Criteria
-- `pnpm -C frontend dev` y `uvicorn api.main:app --reload` funcionan
+- `pnpm -C apps/web dev` y `uvicorn api.main:app --reload` funcionan
 - DB scripts siguen operando desde `/db`
 
 ## Follow-ups
@@ -135,7 +135,7 @@ Necesitamos una vista rápida para stakeholders.
 Vista `/dashboard` en FE con métricas base desde `v_run_summary` y `v_run_top_sources`.
 
 ## Cambios incluidos
-- `frontend/src/app/dashboard/page.tsx`: tarjetas KPIs + gráfico simple (Chart.js o Recharts)
+- `apps/web/src/app/dashboard/page.tsx`: tarjetas KPIs + gráfico simple (Chart.js o Recharts)
 - Hook `useDashboardData` con fetch a `/api/runs/summary`
 - Skeletons y estados vacíos
 
@@ -366,7 +366,7 @@ Asegurar que lo principal no se rompa entre merges.
 Añadir **smoke e2e** con Playwright: carga `/articles`, aplica filtro, exporta CSV.
 
 ## Cambios incluidos
-- `frontend/e2e/playwright.config.ts`
+- `apps/web/e2e/playwright.config.ts`
 - Test `articles.smoke.spec.ts` con:
   - Carga página
   - Escribe en búsqueda (debounce)

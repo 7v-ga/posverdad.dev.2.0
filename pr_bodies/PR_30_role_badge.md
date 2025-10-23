@@ -5,7 +5,7 @@ Se requiere un indicador visual y reutilizable de rol de usuario (admin/read) pa
 Crear `RoleBadge` (admin/read) accesible y consistente con el theming (shadcn/ui).
 
 ## Cambios incluidos
-- `frontend/src/components/RoleBadge.tsx` (nuevo)
+- `apps/web/src/components/RoleBadge.tsx` (nuevo)
 - Ejemplo de uso integrado en un punto visible de la UI (topbar o tabla)
 
 ## Alcance

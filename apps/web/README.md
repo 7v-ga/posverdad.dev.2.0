@@ -1,6 +1,6 @@
-# 🧭 Postverdad Frontend
+# 🧭 Posverdad Frontend
 
-Frontend del sistema **Postverdad**, proyecto de análisis automatizado de medios chilenos.  
+Frontend del sistema **Posverdad**, proyecto de análisis automatizado de medios chilenos.  
 Basado en **Next.js 14 (App Router)** con **TypeScript**, **Tailwind**, **shadcn/ui**, **TanStack Table**, **Zustand** y **Zod**.
 
 ---
@@ -37,7 +37,7 @@ corepack enable
 corepack prepare pnpm@latest --activate
 
 # Instalar dependencias
-cd frontend
+cd apps/web
 pnpm install
 ```
 
@@ -57,7 +57,7 @@ NEXT_PUBLIC_FEATURE_BULK=1                       # activa barra de selección ma
 ## 🧱 Estructura del proyecto
 
 ```
-frontend/
+apps/web/
  ├── app/
  │   ├── (shell)/
  │   │    ├── layout.tsx

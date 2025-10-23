@@ -4,7 +4,7 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   typedRoutes: true,
   turbopack: {
-    // Fuerza que /frontend sea la raíz del workspace para Turbopack
+    // Fuerza que /apps/web sea la raíz del workspace para Turbopack
     root: process.cwd(),
   },
 }

@@ -7,7 +7,7 @@ Reorganizar en monorepo liviano con carpetas top-level.
 ## Cambios incluidos
 - Estructura:
   ```
-  /frontend
+  /apps/web
   /api
   /db
   /jobs
@@ -19,7 +19,7 @@ Reorganizar en monorepo liviano con carpetas top-level.
 - Ajustes de paths en documentación
 
 ## Acceptance Criteria
-- `pnpm -C frontend dev` y `uvicorn api.main:app --reload` funcionan
+- `pnpm -C apps/web dev` y `uvicorn api.main:app --reload` funcionan
 - DB scripts siguen operando desde `/db`
 
 ## Follow-ups
