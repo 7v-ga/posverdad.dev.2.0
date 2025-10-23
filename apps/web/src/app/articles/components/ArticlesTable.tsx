@@ -2,18 +2,19 @@
 
 import * as React from 'react'
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import type {
+  ColumnDef,
   RowSelectionState,
   SortingState,
   VisibilityState,
-  useReactTable,
 } from '@tanstack/react-table'
-
 import { useArticlesStore } from '@/store/articles-store'
 import type { ArticlesState, ArticlesActions } from '@/store/articles-store'
 import type { Article } from '@/lib/schemas'

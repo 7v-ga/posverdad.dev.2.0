@@ -1,12 +1,10 @@
-// next.config.ts
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
+// Tipado inline sin importar nada en runtime
+const config = {
+  // Next 15: usar 'typedRoutes' a nivel raíz (si lo usas)
   typedRoutes: true,
-  turbopack: {
-    // Fuerza que /apps/web sea la raíz del workspace para Turbopack
-    root: process.cwd(),
-  },
-}
 
-export default nextConfig
+  // Si usas Turbopack por defecto en dev
+  // future: { webpack5: true }, // (opcional según tu setup)
+} satisfies import('next').NextConfig
+
+export default config

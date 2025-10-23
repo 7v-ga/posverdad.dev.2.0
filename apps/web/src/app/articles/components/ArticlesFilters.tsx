@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+// ✅ evitamos importar desde @radix-ui/react-checkbox
+type CheckedState = boolean | 'indeterminate'
+
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -73,9 +76,9 @@ export default function ArticlesFilters() {
             <label key={s} className="flex items-center gap-2 text-sm">
               <Checkbox
                 checked={filters.sources.includes(s)}
-                onCheckedChange={(v) => {
+                onCheckedChange={(v: CheckedState) => {
                   const set = new Set(filters.sources)
-                  if (!!v) set.add(s)
+                  if (v === true) set.add(s)
                   else set.delete(s)
                   setFilters({ sources: Array.from(set) })
                 }}
@@ -95,8 +98,8 @@ export default function ArticlesFilters() {
           max={8000}
           step={100}
           value={len}
-          onValueChange={(v) => setLen(v as [number, number])}
-          onValueCommit={(v) => {
+          onValueChange={(v: number[]) => setLen(v as [number, number])}
+          onValueCommit={(v: number[]) => {
             const [min, max] = v as [number, number]
             setFilters({ lenMin: min, lenMax: max })
           }}
@@ -113,8 +116,8 @@ export default function ArticlesFilters() {
           max={1}
           step={0.05}
           value={pol}
-          onValueChange={(v) => setPol(v as [number, number])}
-          onValueCommit={(v) => {
+          onValueChange={(v: number[]) => setPol(v as [number, number])}
+          onValueCommit={(v: number[]) => {
             const [min, max] = v as [number, number]
             setFilters({ polMin: min, polMax: max })
           }}
@@ -131,8 +134,8 @@ export default function ArticlesFilters() {
           max={1}
           step={0.05}
           value={sub}
-          onValueChange={(v) => setSub(v as [number, number])}
-          onValueCommit={(v) => {
+          onValueChange={(v: number[]) => setSub(v as [number, number])}
+          onValueCommit={(v: number[]) => {
             const [min, max] = v as [number, number]
             setFilters({ subMin: min, subMax: max })
           }}

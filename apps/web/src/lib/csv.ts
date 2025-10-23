@@ -1,4 +1,4 @@
-import { Article } from './schemas'
+import type { Article } from './schemas'
 
 function escapeCSV(val: string) {
   // Si contiene comillas, comas o saltos de línea → encierra en comillas y duplica comillas internas
