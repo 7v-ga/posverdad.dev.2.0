@@ -75,3 +75,16 @@ docker-compose.override.yml
 
 # Por si alguien creó un archivo con este nombre raro
 __pycache__.pyc
+
+# === Node / Next / Turborepo ===
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+.next/
+.turbo/
+dist/
+out/
+coverage/
+*.log
+apps/*/node_modules/
+apps/*/.next/
