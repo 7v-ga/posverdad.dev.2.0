@@ -86,9 +86,5 @@ dist/
 out/
 coverage/
 *.log
-# === Node / Monorepo ===
-node_modules/
 apps/*/node_modules/
-.turbo/
-.next/
 apps/*/.next/
