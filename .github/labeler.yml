@@ -1,14 +1,14 @@
 area/frontend:
   - changed-files:
       - any-glob-to-any-file:
-          - 'frontend/**'
+          - 'apps/web/**'
 
 fe-p1:
   - changed-files:
       - any-glob-to-any-file:
-          - 'frontend/src/app/articles/**'
-          - 'frontend/src/lib/**'
-          - 'frontend/src/store/**'
+          - 'apps/web/src/app/articles/**'
+          - 'apps/web/src/lib/**'
+          - 'apps/web/src/store/**'
 
 docs:
   - changed-files:
