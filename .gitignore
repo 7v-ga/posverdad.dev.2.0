@@ -1,4 +1,4 @@
-# === Python / Virtualenv ===
+# ================= Python / Virtualenv =================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,12 +16,11 @@ venv/
 ENV/
 env/
 
-# === Jupyter / IPython ===
+# ================= Jupyter / IPython =================
 .ipynb_checkpoints/
 *.ipynb~
-# (no ignoramos *.ipynb para permitir versionar notebooks)
 
-# === Logs y temporales ===
+# ================= Logs / temporales =================
 *.log
 logs/
 *.tmp
@@ -31,11 +30,10 @@ logs/
 tmp/
 .DS_Store
 Thumbs.db
-# Ambas variantes
 .last_run
 last_run
 
-# === Data / Outputs ===
+# ================= Data / Outputs =================
 outputs/
 reports/
 graph/
@@ -49,25 +47,27 @@ htmlcov-stanza/
 .coverage.*
 coverage.xml
 
-# === Caches / QA ===
+# ================= Caches / QA =================
 .mypy_cache/
 .pytest_cache/
 .tox/
 .ruff_cache/
 
-# === Configuración / Entornos ===
+# ================= Config / Entornos =================
 .env
 .env.local
 .env.*.local
 .envrc
 .direnv/
+# Mantener ejemplos
+!.env.example
 
-# === VSCode / IDE ===
+# ================= VSCode / IDE =================
 .vscode/
 .idea/
 *.code-workspace
 
-# === Docker (overrides locales / artefactos) ===
+# ================= Docker (local) =================
 docker-compose.override.yml
 .docker/
 *.pid
@@ -76,15 +76,39 @@ docker-compose.override.yml
 # Por si alguien creó un archivo con este nombre raro
 __pycache__.pyc
 
-# === Node / Next / Turborepo ===
+# ================ Node / Next / Turborepo (Monorepo) ================
+# node_modules (raíz, apps, packages)
 node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
 .pnpm-store/
 .pnpm-debug.log
+
+# Next / Turbopack / Turborepo caches
 .next/
-.turbo/
-dist/
-out/
-coverage/
-*.log
-apps/*/node_modules/
 apps/*/.next/
+.turbo/
+apps/*/.turbo/
+turbo-build.log
+
+# Build outputs
+dist/
+apps/*/dist/
+out/
+apps/*/out/
+
+# TypeScript incremental, ESLint cache
+*.tsbuildinfo
+.eslintcache
+
+# Playwright / Cypress (si se usa)
+playwright-report/
+test-results/
+cypress/videos/
+cypress/screenshots/
+
+# Vercel local
+.vercel
+
+# Misc/CI
+*.coverage
