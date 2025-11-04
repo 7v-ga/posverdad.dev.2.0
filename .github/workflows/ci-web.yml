@@ -41,8 +41,8 @@ jobs:
 
     env:
       PNPM_VERSION: "9.0.0"
-      TURBO_CACHE_DIR: .turbo
       PNPM_CACHE_DIR: ~/.pnpm-store
+      TURBO_CACHE_DIR: .turbo
 
     steps:
       - name: 🧾 Checkout
@@ -52,33 +52,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: "pnpm"
 
       - name: 🚀 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: "9.0.0"
+          version: ${{ env.PNPM_VERSION }}
           run_install: false
 
       - name: ♻️ Restore pnpm store cache
         uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
+          path: ${{ env.PNPM_CACHE_DIR }}
           key: pnpm-store-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             pnpm-store-${{ runner.os }}-${{ matrix.node }}-
 
-      - name: 📦 Install (frozen lockfile)
+      - name: 📦 Install (frozen lockfile, prefer-offline)
         run: |
-          pnpm config set store-dir ~/.pnpm-store
-          pnpm install --frozen-lockfile
-
-      - name: 🧪 Diagnostics (versions & workspace)
-        run: |
-          node -v
-          pnpm -v
-          pnpm list -r --depth=0 || true
-          pnpm -C apps/web exec next --version || true
+          set -euxo pipefail
+          pnpm config set store-dir $PNPM_CACHE_DIR
+          pnpm config set auto-install-peers true
+          pnpm install --frozen-lockfile --prefer-offline
 
       - name: ♻️ Restore Turbo cache
         uses: actions/cache@v4
@@ -88,15 +82,28 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-${{ matrix.node }}-
 
-      # Ejecutamos con Turbo para aprovechar su caching de tareas.
+      - name: 🧪 Diagnostics (env, store, workspace)
+        run: |
+          set -euxo pipefail
+          node -v
+          pnpm -v
+          pnpm turbo --version || true
+          echo "PNPM store dir:"
+          pnpm config get store-dir
+          df -h
+          echo "Workspaces:"
+          pnpm list -r --depth=0 || true
+          echo "Next version:"
+          pnpm -C apps/web exec next --version || true
+
       - name: 🔧 Lint (apps/web) — no warnings
-        run: pnpm dlx turbo run lint --filter=@posverdad/web -- --max-warnings=0
+        run: pnpm turbo run lint --filter=@posverdad/web -- --max-warnings=0
 
       - name: 🔎 Typecheck (apps/web)
-        run: pnpm dlx turbo run typecheck --filter=@posverdad/web
+        run: pnpm turbo run typecheck --filter=@posverdad/web
 
       - name: 🏗️ Build (apps/web)
-        run: pnpm dlx turbo run build --filter=@posverdad/web
+        run: pnpm turbo run build --filter=@posverdad/web
 
       - name: 📤 Save Turbo cache
         if: always()
