@@ -2,15 +2,38 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "develop"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "07:00"
-    open-pull-requests-limit: 10
-    labels:
-      - "deps"
-      - "automated"
+    open-pull-requests-limit: 3
+    labels: ["deps","automated"]
     commit-message:
       prefix: "deps"
-    # Respeta los rangos semver de tu package.json; así normalmente recibirás patch/minor.
-    # Si luego quieres majors, te agrego reglas/grupos separados.
+    groups:
+      tooling-eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "@typescript-eslint/*"
+      tooling-types:
+        patterns:
+          - "typescript"
+          - "@types/*"
+      next-and-ui:
+        patterns:
+          - "next"
+          - "lucide-react"
+          - "@radix-ui/*"
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tailwindcss-animate"
+          - "tw-animate-css"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      misc-dev:
+        patterns:
+          - "*"
