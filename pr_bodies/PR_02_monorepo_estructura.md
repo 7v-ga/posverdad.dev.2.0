@@ -1,10 +1,13 @@
 ## Contexto
+
 Hoy frontend convive con scraping y scripts. Queremos un layout claro para escalar (FE/BE/infra/docs).
 
 ## Objetivo
+
 Reorganizar en monorepo liviano con carpetas top-level.
 
 ## Cambios incluidos
+
 - Estructura:
   ```
   /apps/web
@@ -19,10 +22,12 @@ Reorganizar en monorepo liviano con carpetas top-level.
 - Ajustes de paths en documentación
 
 ## Acceptance Criteria
+
 - `pnpm -C apps/web dev` y `uvicorn api.main:app --reload` funcionan
 - DB scripts siguen operando desde `/db`
 
 ## Follow-ups
+
 - CI matrix por subproyecto
 
 Closes #2

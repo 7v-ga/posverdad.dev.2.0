@@ -1,5 +1,5 @@
-import { Suspense } from "react"
-import ArticlesPageClient from "./page.client"
+import { Suspense } from 'react'
+import ArticlesPageClient from './page.client'
 
 export default function Page() {
   return (

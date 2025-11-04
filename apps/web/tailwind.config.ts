@@ -5,9 +5,7 @@ const config = {
   // v4: usa ['class', 'dark'] para modo oscuro por clase
   darkMode: ['class', 'dark'],
   // v4 sigue aceptando 'content' (Next + TS agradecen el tipado explícito)
-  content: [
-    './src/**/*.{ts,tsx}',
-  ],
+  content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       container: { center: true, padding: '2rem' },

@@ -30,7 +30,7 @@ export function toCSV(rows: Article[]): string {
         String(r.len_chars),
         String(r.polarity),
         String(r.subjectivity),
-      ].join(',')
+      ].join(','),
     )
   }
   return lines.join('\n')

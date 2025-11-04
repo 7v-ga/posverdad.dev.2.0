@@ -6,13 +6,14 @@ Guía para preparar el entorno, correr pruebas y contribuir a **Posverdad** en l
 
 ## 🔧 Requisitos
 
-- Ubuntu 22.04+ (recomendado 24.04)  
-- Python **3.12** con `venv` / `pip`  
-- **Docker** + Docker Compose plugin  
-- **GNU make**  
+- Ubuntu 22.04+ (recomendado 24.04)
+- Python **3.12** con `venv` / `pip`
+- **Docker** + Docker Compose plugin
+- **GNU make**
 - Internet (descarga de modelos NLP)
 
-> Opcional pero útil: acceso a Docker sin sudo  
+> Opcional pero útil: acceso a Docker sin sudo
+>
 > ```bash
 > sudo usermod -aG docker "$USER"  # cierra sesión y vuelve a entrar
 > ```
@@ -55,7 +56,7 @@ make db-down
 
 Separación por tipo:
 
-- **Unit** (rápidos, sin DB) → *default de `make test`*  
+- **Unit** (rápidos, sin DB) → _default de `make test`_
 - **Integration** (requiere DB en Docker)
 
 ```bash
@@ -94,23 +95,24 @@ Correr un test/archivo puntual:
 
 Estos comandos automatizan la limpieza del entorno y las pruebas:
 
-- `make reset`  
-  - Limpia entorno y deps Python.  
-  - Corre **solo tests unitarios** (rápidos, sin DB).  
+- `make reset`
+  - Limpia entorno y deps Python.
+  - Corre **solo tests unitarios** (rápidos, sin DB).
   - Opcional: `make reset SCHEMA_RESET=1` → también levanta Docker y recrea esquema DB.
 
-- `make reset-all`  
-  - Limpia entorno y deps.  
-  - **Siempre levanta DB/Redis con Docker**, espera salud y resetea el esquema.  
+- `make reset-all`
+  - Limpia entorno y deps.
+  - **Siempre levanta DB/Redis con Docker**, espera salud y resetea el esquema.
   - Corre **tests unit + integration**.
 
-- `make reset-nodb`  
-  - Igual que `reset`, pero explícitamente sin Docker.  
+- `make reset-nodb`
+  - Igual que `reset`, pero explícitamente sin Docker.
   - Solo tests unitarios.
 
-> 🔎 En resumen:  
-> - **reset-nodb** → unit puro.  
-> - **reset** → unit (con flag opcional para DB).  
+> 🔎 En resumen:
+>
+> - **reset-nodb** → unit puro.
+> - **reset** → unit (con flag opcional para DB).
 > - **reset-all** → unit + integration (siempre usa Docker y resetea esquema).
 
 ---
@@ -225,7 +227,8 @@ MAX_DUPLICATES_IN_A_ROW=10
 
 ## 🧯 Problemas comunes
 
-**DB “connection refused”**  
+**DB “connection refused”**
+
 ```bash
 make db-up && make db-wait
 # o usa un reset completo:
@@ -236,14 +239,16 @@ python scripts/check_db.py
 **Cobertura falla en integración aislada**  
 `make test-int` ya usa `--cov-append`; ejecuta antes `make test` o directamente `make reset-all`.
 
-**spaCy model no encontrado**  
+**spaCy model no encontrado**
+
 ```bash
 make spacy-model
 # o
 python -m spacy download es_core_news_md
 ```
 
-**Permisos de Docker**  
+**Permisos de Docker**
+
 ```bash
 sudo usermod -aG docker "$USER"  # relogin
 ```
@@ -252,9 +257,9 @@ sudo usermod -aG docker "$USER"  # relogin
 
 ## 🤝 Contribuir
 
-1. Crea una rama (`feat/*`, `fix/*`).  
-2. Asegura que **unit** pase (`make test`).  
-3. Antes de merge, valida **integration** (`DEFAULT_TEST_SCOPE=all make test` o `make reset-all`).  
+1. Crea una rama (`feat/*`, `fix/*`).
+2. Asegura que **unit** pase (`make test`).
+3. Antes de merge, valida **integration** (`DEFAULT_TEST_SCOPE=all make test` o `make reset-all`).
 4. Abre PR con descripción clara.
 
 ---
