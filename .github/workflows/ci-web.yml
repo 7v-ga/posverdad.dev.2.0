@@ -57,21 +57,28 @@ jobs:
       - name: 🚀 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: "9.0.0"
           run_install: false
 
       - name: ♻️ Restore pnpm store cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.PNPM_CACHE_DIR }}
+          path: ~/.pnpm-store
           key: pnpm-store-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             pnpm-store-${{ runner.os }}-${{ matrix.node }}-
 
       - name: 📦 Install (frozen lockfile)
         run: |
-          pnpm config set store-dir $PNPM_CACHE_DIR
+          pnpm config set store-dir ~/.pnpm-store
           pnpm install --frozen-lockfile
+
+      - name: 🧪 Diagnostics (versions & workspace)
+        run: |
+          node -v
+          pnpm -v
+          pnpm list -r --depth=0 || true
+          pnpm -C apps/web exec next --version || true
 
       - name: ♻️ Restore Turbo cache
         uses: actions/cache@v4
@@ -83,13 +90,13 @@ jobs:
 
       # Ejecutamos con Turbo para aprovechar su caching de tareas.
       - name: 🔧 Lint (apps/web) — no warnings
-        run: pnpm dlx turbo run lint --filter=./apps/web -- --max-warnings=0
+        run: pnpm dlx turbo run lint --filter=@posverdad/web -- --max-warnings=0
 
       - name: 🔎 Typecheck (apps/web)
-        run: pnpm dlx turbo run typecheck --filter=./apps/web
+        run: pnpm dlx turbo run typecheck --filter=@posverdad/web
 
       - name: 🏗️ Build (apps/web)
-        run: pnpm dlx turbo run build --filter=./apps/web
+        run: pnpm dlx turbo run build --filter=@posverdad/web
 
       - name: 📤 Save Turbo cache
         if: always()
