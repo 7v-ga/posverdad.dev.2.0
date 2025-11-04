@@ -68,10 +68,12 @@ make reset-all
 ## 🧩 Cambios en dependencias
 
 ### Transformers
-- Pin sugerido (ejemplo): `transformers==4.44.2`  
+
+- Pin sugerido (ejemplo): `transformers==4.44.2`
 - Motivo: compatibilidad estable con Py3.12/spaCy y evitar deprecaciones “silenciosas”.
 
 ### Torch (opcional, por CPU/GPU)
+
 Instálalo **aparte**, **según tu hardware**:
 
 ```bash
@@ -85,7 +87,9 @@ pip install --index-url https://download.pytorch.org/whl/cu124 torch torchvision
 > Si no haces deep learning local, puedes omitir Torch.
 
 ### spaCy
-- Asegura el modelo:  
+
+- Asegura el modelo:
+
 ```bash
 python -m spacy download es_core_news_md
 ```
@@ -116,13 +120,15 @@ make merge-coverage # combina .coverage.* y genera HTML combinado
 ## 🗄️ Cambios en almacenamiento (⚠️ posibles rupturas)
 
 ### Nuevo patrón de transacciones
+
 - Los helpers (`save_keywords`, `save_entities`, `save_framing`, etc.) **aceptan `conn` o `cursor`**:
   - Si **`conn`** → el helper **comitea** al final y hace `rollback()` si falla.
   - Si **`cursor`** → no comitea (pensado para usarse dentro de `with conn:` o cuando tú controlas la transacción).
 - **`store_article(conn, item)`** mantiene la transacción del alta completa y hace `commit()`/`rollback()`.
 
 ### Qué revisar en tu código
-- Si antes asumías que **ningún** helper hacía `commit()`, y ahora pasas `conn`, puede cambiar el comportamiento.  
+
+- Si antes asumías que **ningún** helper hacía `commit()`, y ahora pasas `conn`, puede cambiar el comportamiento.
   - **Solución**: pásales **`cursor`** si quieres controlar la transacción externamente:
     ```python
     with conn:
@@ -135,8 +141,8 @@ make merge-coverage # combina .coverage.* y genera HTML combinado
 
 ## 🧪 Testing y cobertura
 
-- **Markers**: `unit` y `integration` (ver carpeta `tests/unit` y `tests/integration`).  
-- **Cobertura**: en `reset-all` se corre `unit` y luego `integration` con `--cov-append` para acumular resultados.  
+- **Markers**: `unit` y `integration` (ver carpeta `tests/unit` y `tests/integration`).
+- **Cobertura**: en `reset-all` se corre `unit` y luego `integration` con `--cov-append` para acumular resultados.
 - Umbral configurado en `pytest.ini` (`--cov-fail-under`); puedes ajustarlo según tus necesidades.
 
 Ejemplos útiles:
@@ -158,8 +164,9 @@ make reset-all
 
 ## 🧠 HuggingFace / Transformers
 
-- Evita warnings futuros pasando explícitamente `clean_up_tokenization_spaces=True/False` en tus llamadas de tokenización.  
+- Evita warnings futuros pasando explícitamente `clean_up_tokenization_spaces=True/False` en tus llamadas de tokenización.
 - En entornos con proxies/descargas lentas, usa caches:
+
 ```dotenv
 HUGGINGFACE_HUB_CACHE=.cache/hf
 TRANSFORMERS_CACHE=.cache/hf/transformers
@@ -170,22 +177,26 @@ SENTENCE_TRANSFORMERS_HOME=.cache/sentence-transformers
 
 ## 🧯 Problemas comunes
 
-**DB “connection refused”**  
+**DB “connection refused”**
+
 ```bash
 make db-up && make db-wait
 python scripts/check_db.py
 ```
+
 Revisa además `POSTGRES_*` en `.env`.
 
 **Cobertura < umbral al correr solo integración**  
 Ejecuta `make test` primero o usa `make reset-all` (acumula cobertura).
 
-**spaCy “model not found”**  
+**spaCy “model not found”**
+
 ```bash
 python -m spacy download es_core_news_md
 ```
 
-**Permisos Docker**  
+**Permisos Docker**
+
 ```bash
 sudo usermod -aG docker "$USER"  # re-login
 ```

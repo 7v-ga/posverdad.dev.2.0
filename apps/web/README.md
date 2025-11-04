@@ -7,24 +7,25 @@ Basado en **Next.js 14 (App Router)** con **TypeScript**, **Tailwind**, **shadcn
 
 ## 📦 Stack técnico
 
-| Componente | Tecnología |
-|-------------|-------------|
-| Framework | Next.js 14 (App Router) |
-| Lenguaje | TypeScript estricto |
-| UI | TailwindCSS + shadcn/ui |
-| Estado global | Zustand + persistencia localStorage |
-| Validación | Zod |
-| Tabla / Filtros | TanStack Table v8 |
-| Build Tool | pnpm + corepack (Node 20 LTS) |
+| Componente      | Tecnología                          |
+| --------------- | ----------------------------------- |
+| Framework       | Next.js 14 (App Router)             |
+| Lenguaje        | TypeScript estricto                 |
+| UI              | TailwindCSS + shadcn/ui             |
+| Estado global   | Zustand + persistencia localStorage |
+| Validación      | Zod                                 |
+| Tabla / Filtros | TanStack Table v8                   |
+| Build Tool      | pnpm + corepack (Node 20 LTS)       |
 
 ---
 
 ## 🚀 Instalación y entorno
 
 ### 1️⃣ Requisitos previos
-- Node.js **v20.x**  
-- pnpm (**corepack habilitado**)  
-- nvm (opcional, recomendado)  
+
+- Node.js **v20.x**
+- pnpm (**corepack habilitado**)
+- nvm (opcional, recomendado)
 - Ubuntu/Linux user-space (sin sudo global)
 
 ### 2️⃣ Setup
@@ -87,20 +88,21 @@ apps/web/
 
 ## ⚙️ Scripts útiles
 
-| Comando | Descripción |
-|----------|-------------|
-| `pnpm dev` | Ejecuta el servidor Next.js con Turbopack |
-| `pnpm build` | Compila para producción |
-| `pnpm start` | Sirve la build compilada |
-| `pnpm lint` | Linter |
-| `pnpm typecheck` | Verificación TypeScript (`tsc --noEmit`) |
-| `pnpm format` | Formatea con Prettier |
+| Comando          | Descripción                               |
+| ---------------- | ----------------------------------------- |
+| `pnpm dev`       | Ejecuta el servidor Next.js con Turbopack |
+| `pnpm build`     | Compila para producción                   |
+| `pnpm start`     | Sirve la build compilada                  |
+| `pnpm lint`      | Linter                                    |
+| `pnpm typecheck` | Verificación TypeScript (`tsc --noEmit`)  |
+| `pnpm format`    | Formatea con Prettier                     |
 
 ---
 
 ## 🧩 Features implementadas
 
 ### 🧠 **A. UX Polish**
+
 - Búsqueda con debounce (300 ms)
 - Estado vacío con CTA “Limpiar filtros”
 - Exportar CSV filtrado (UTF-8)
@@ -108,15 +110,17 @@ apps/web/
 - Selector de pageSize (10/20/50) persistente
 
 ### 🔗 **B. URL-Driven Filters**
+
 - Filtros ↔ `searchParams` sincronizados (shareable links)
 - Estado rehidratable desde la URL
 - Persistencia combinada (`localStorage` + URL)
 
 ### 🧩 **C. Bulk Entities (Mock + Flag)**
+
 - Visible si `NEXT_PUBLIC_FEATURE_BULK=1`
 - Selección por fila y “Seleccionar todo (página)”
-- Acciones:  
-  - **Bloquear / Desbloquear** entidades  
+- Acciones:
+  - **Bloquear / Desbloquear** entidades
   - **Agregar alias** masivamente
 - Estado local mock (sin API real)
 - Feedback básico (`alert`, puede migrar a `toast()`)
@@ -141,8 +145,8 @@ apps/web/
 ## 🔒 Seguridad y control
 
 - `main` y `develop` protegidas (1 review, checks automáticos).
-- Workflows CI:  
-  - `Auto label PRs / label (pull_request)`  
+- Workflows CI:
+  - `Auto label PRs / label (pull_request)`
   - `Auto label by title / label-by-title (pull_request)`
 - Script CLI para (des)activar protecciones:
   `scripts/protect-branches.sh`
@@ -153,14 +157,14 @@ apps/web/
 
 **Flujo recomendado:**
 
-| Caso | Qué validar |
-|------|--------------|
-| Filtros | Cambios en UI reflejados en la URL, recarga conserva estado |
-| CSV | Exporta correctamente los artículos visibles |
-| Persistencia | pageSize y columnas sobreviven al refresh |
-| Bulk (flag on) | Seleccionar todo, bloquear/desbloquear, agregar alias |
-| Estado vacío | “No hay resultados con estos filtros” + botón “Limpiar filtros” |
-| Layout | Sin errores de hidratación, sin botones anidados |
+| Caso           | Qué validar                                                     |
+| -------------- | --------------------------------------------------------------- |
+| Filtros        | Cambios en UI reflejados en la URL, recarga conserva estado     |
+| CSV            | Exporta correctamente los artículos visibles                    |
+| Persistencia   | pageSize y columnas sobreviven al refresh                       |
+| Bulk (flag on) | Seleccionar todo, bloquear/desbloquear, agregar alias           |
+| Estado vacío   | “No hay resultados con estos filtros” + botón “Limpiar filtros” |
+| Layout         | Sin errores de hidratación, sin botones anidados                |
 
 ---
 
@@ -176,15 +180,16 @@ apps/web/
 
 ## 👥 Contacto / roles
 
-| Rol | Persona / Función |
-|-----|--------------------|
-| Owner / Dev principal | Gabriel (7v-ga) |
-| Asistente técnico | ChatGPT (Postverdad Context) |
-| Estado del proyecto | En desarrollo activo – Fase P1 finalizada |
+| Rol                   | Persona / Función                         |
+| --------------------- | ----------------------------------------- |
+| Owner / Dev principal | Gabriel (7v-ga)                           |
+| Asistente técnico     | ChatGPT (Postverdad Context)              |
+| Estado del proyecto   | En desarrollo activo – Fase P1 finalizada |
 
 ---
 
 ### 📄 Licencia
+
 Software en desarrollo, uso interno de investigación (no redistribuido públicamente).
 
 ---

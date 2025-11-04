@@ -7,16 +7,9 @@ import { z } from 'zod'
 export const EntitySchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum([
-    'PERSON',
-    'ORG',
-    'LOC',
-    'GPE',
-    'EVENT',
-    'WORK_OF_ART',
-    'PRODUCT',
-    'OTHER',
-  ]).default('OTHER'),
+  type: z
+    .enum(['PERSON', 'ORG', 'LOC', 'GPE', 'EVENT', 'WORK_OF_ART', 'PRODUCT', 'OTHER'])
+    .default('OTHER'),
   aliases: z.array(z.string()).default([]),
   blocked: z.boolean().default(false),
 })

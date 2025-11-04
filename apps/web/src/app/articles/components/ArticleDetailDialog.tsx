@@ -13,7 +13,12 @@ export default function ArticleDetailDialog({
   onClose: () => void
 }) {
   return (
-    <Dialog open={!!article} onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog
+      open={!!article}
+      onOpenChange={(o) => {
+        if (!o) onClose()
+      }}
+    >
       <DialogContent className="max-w-2xl">
         {article && (
           <>
@@ -21,8 +26,12 @@ export default function ArticleDetailDialog({
               <DialogTitle className="text-lg">{article.title}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 text-sm">
-              <div><span className="font-medium">Fuente:</span> {article.source}</div>
-              <div><span className="font-medium">Fecha:</span> {formatDate(article.published_at)}</div>
+              <div>
+                <span className="font-medium">Fuente:</span> {article.source}
+              </div>
+              <div>
+                <span className="font-medium">Fecha:</span> {formatDate(article.published_at)}
+              </div>
               <div className="flex gap-2">
                 <Badge variant="secondary">Len: {article.len_chars}</Badge>
                 <Badge variant="secondary">Pol: {article.polarity}</Badge>
@@ -37,7 +46,9 @@ export default function ArticleDetailDialog({
                 <div className="font-medium mb-1">Entidades</div>
                 <div className="flex flex-wrap gap-2">
                   {article.entities.map((e) => (
-                    <Badge key={e.id}>{e.type}: {e.name}</Badge>
+                    <Badge key={e.id}>
+                      {e.type}: {e.name}
+                    </Badge>
                   ))}
                 </div>
               </div>

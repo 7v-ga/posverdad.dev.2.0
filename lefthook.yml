@@ -1,0 +1,21 @@
+# lefthook.yml (raíz)
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      glob: "*.{js,jsx,ts,tsx,json,md,css,scss}"
+      run: pnpm exec prettier --write {staged_files} && git add {staged_files}
+
+    eslint-web:
+      # pnpm filtra al paquete y ejecuta en apps/web; usa "." o "src"
+      run: pnpm --filter @posverdad/web exec eslint . --max-warnings=0 --report-unused-disable-directives --cache
+
+pre-push:
+  parallel: false
+  commands:
+    typecheck-web:
+      run: pnpm --filter @posverdad/web typecheck
+
+    # Opcional: build rápido para detectar roturas antes de subir
+    # build-web:
+    #   run: pnpm --filter @posverdad/web build

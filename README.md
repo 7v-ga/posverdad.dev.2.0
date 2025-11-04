@@ -225,18 +225,18 @@ make scrape       # ejecutar spider principal
 
 ### 🔄 Detalle de resets
 
-- `make reset`  
-  - Limpia entorno y deps Python.  
-  - Corre **solo tests unitarios** (rápidos, sin DB).  
+- `make reset`
+  - Limpia entorno y deps Python.
+  - Corre **solo tests unitarios** (rápidos, sin DB).
   - Opcional: `make reset SCHEMA_RESET=1` → también levanta Docker y recrea esquema DB.
 
-- `make reset-all`  
-  - Limpia entorno y deps.  
-  - **Siempre levanta DB/Redis con Docker**, espera salud y resetea el esquema.  
+- `make reset-all`
+  - Limpia entorno y deps.
+  - **Siempre levanta DB/Redis con Docker**, espera salud y resetea el esquema.
   - Corre **tests unit + integration**.
 
-- `make reset-nodb`  
-  - Igual que `reset`, pero explícitamente sin Docker.  
+- `make reset-nodb`
+  - Igual que `reset`, pero explícitamente sin Docker.
   - Solo tests unitarios.
 
 ---
@@ -259,12 +259,12 @@ make scrape       # ejecutar spider principal
 make scrape ARGS="-a year=2024 -a category=politica -a max_duplicates=15"
 ```
 
-| Bandera                    | Tipo   | Descripción                           |
-| -------------------------- | ------ | ------------------------------------- |
-| `-a year=YYYY`             | entero | Año mínimo permitido (default: 2020)  |
-| `-a category=XXX`          | texto  | Filtro textual por categoría          |
-| `-a custom_urls=file.csv`  | ruta   | Lista personalizada de URLs           |
-| `-a max_duplicates=N`      | entero | Corte por duplicados consecutivos     |
+| Bandera                   | Tipo   | Descripción                          |
+| ------------------------- | ------ | ------------------------------------ |
+| `-a year=YYYY`            | entero | Año mínimo permitido (default: 2020) |
+| `-a category=XXX`         | texto  | Filtro textual por categoría         |
+| `-a custom_urls=file.csv` | ruta   | Lista personalizada de URLs          |
+| `-a max_duplicates=N`     | entero | Corte por duplicados consecutivos    |
 
 ---
 
