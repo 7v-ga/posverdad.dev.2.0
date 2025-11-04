@@ -13,8 +13,8 @@
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "dev:web": "pnpm --filter @posverdad/web dev",
     "dev:api": "pnpm --filter @posverdad/api dev",
+    "dev:web": "pnpm --filter @posverdad/web dev",
     "build": "turbo run build",
     "build:web": "pnpm --filter @posverdad/web build",
     "build:api": "pnpm --filter @posverdad/api build",
