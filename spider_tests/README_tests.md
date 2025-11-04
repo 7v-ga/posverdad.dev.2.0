@@ -15,3 +15,4 @@ Este paquete añade **tests de parsing y de navegación** para el spider `el_mos
 2. Ejecuta:
    ```bash
    pytest tests/spiders -q
+   ```

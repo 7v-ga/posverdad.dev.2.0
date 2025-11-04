@@ -95,7 +95,7 @@ export default function ArticlesTable() {
       const pol = a.polarity ?? 0
       const sub = a.subjectivity ?? 0
 
-      if (q && !(`${a.title} ${a.url}`.toLowerCase().includes(q))) return false
+      if (q && !`${a.title} ${a.url}`.toLowerCase().includes(q)) return false
       if (filters.sources.length && !filters.sources.includes(a.source)) return false
       if (filters.lenMin != null && a.len_chars < filters.lenMin) return false
       if (filters.lenMax != null && a.len_chars > filters.lenMax) return false
@@ -214,9 +214,7 @@ export default function ArticlesTable() {
   const hasRows = table.getRowModel().rows.length > 0
 
   // Helpers Bulk (mock)
-  const selectedRows = FEATURE_BULK
-    ? table.getRowModel().rows.filter((r) => r.getIsSelected())
-    : []
+  const selectedRows = FEATURE_BULK ? table.getRowModel().rows.filter((r) => r.getIsSelected()) : []
   const selectedCount = selectedRows.length
 
   const bulkBlock = (blocked: boolean) => {
@@ -232,7 +230,9 @@ export default function ArticlesTable() {
 
   const bulkAddAlias = () => {
     if (!FEATURE_BULK || selectedCount === 0) return
-    const alias = window.prompt('Alias a agregar (se aplicará a TODAS las entidades de la selección):')
+    const alias = window.prompt(
+      'Alias a agregar (se aplicará a TODAS las entidades de la selección):',
+    )
     if (!alias) return
     const v = alias.trim()
     if (!v) return
@@ -309,10 +309,20 @@ export default function ArticlesTable() {
             Seleccionados: <Badge variant="secondary">{selectedCount}</Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={selectedCount === 0} onClick={() => bulkBlock(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selectedCount === 0}
+              onClick={() => bulkBlock(true)}
+            >
               Bloquear entidades
             </Button>
-            <Button variant="outline" size="sm" disabled={selectedCount === 0} onClick={() => bulkBlock(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selectedCount === 0}
+              onClick={() => bulkBlock(false)}
+            >
               Desbloquear entidades
             </Button>
             <Button size="sm" disabled={selectedCount === 0} onClick={bulkAddAlias}>
@@ -348,9 +358,7 @@ export default function ArticlesTable() {
                           {indicator}
                         </button>
                       ) : (
-                        <div className="inline-flex items-center gap-1">
-                          {headerContent}
-                        </div>
+                        <div className="inline-flex items-center gap-1">{headerContent}</div>
                       )}
                     </th>
                   )

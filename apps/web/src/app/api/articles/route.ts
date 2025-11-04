@@ -26,9 +26,7 @@ export async function GET() {
       len_chars: 800,
       polarity: -0.4,
       subjectivity: 0.6,
-      entities: [
-        { id: 'e-3', name: 'Chile', type: 'LOC', aliases: [], blocked: false },
-      ],
+      entities: [{ id: 'e-3', name: 'Chile', type: 'LOC', aliases: [], blocked: false }],
     },
   ]
   return NextResponse.json({ items, total: items.length })

@@ -59,7 +59,7 @@ export const useArticlesStore = create<ArticlesState & ArticlesActions>()(
             entities: art.entities.map((e) =>
               e.id === entityId && !e.aliases.includes(alias)
                 ? { ...e, aliases: [...e.aliases, alias] }
-                : e
+                : e,
             ),
           }
         })
@@ -72,19 +72,19 @@ export const useArticlesStore = create<ArticlesState & ArticlesActions>()(
           return {
             ...art,
             entities: art.entities.map((e) =>
-              e.id === entityId ? { ...e, aliases: e.aliases.filter((a) => a !== alias) } : e
+              e.id === entityId ? { ...e, aliases: e.aliases.filter((a) => a !== alias) } : e,
             ),
           }
         })
         set({ items })
       },
     }),
-    { name: 'postverdad-articles' }
-  )
+    { name: 'postverdad-articles' },
+  ),
 )
 
 // Solo para QA manual; no afecta producción
 if (typeof window !== 'undefined') {
-  // @ts-expect-error
+  // @ts-expect-error: expose store for manual QA in devtools
   window.__articlesStore = useArticlesStore
 }

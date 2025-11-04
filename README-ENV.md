@@ -131,8 +131,8 @@ python scripts/check_db.py
 
 ## 🔄 Targets de reset
 
-- `make reset` → Unit tests rápidos, sin DB (opcional `SCHEMA_RESET=1` para levantar DB y resetear esquema).  
-- `make reset-all` → Siempre levanta DB/Redis con Docker, resetea esquema y corre unit + integration.  
+- `make reset` → Unit tests rápidos, sin DB (opcional `SCHEMA_RESET=1` para levantar DB y resetear esquema).
+- `make reset-all` → Siempre levanta DB/Redis con Docker, resetea esquema y corre unit + integration.
 - `make reset-nodb` → Solo unit tests, sin DB.
 
 ---
@@ -176,21 +176,23 @@ make scrape ARGS="-a year=2024 -a category=politica -a max_duplicates=15"
 
 ## 🛡️ Producción y rendimiento
 
-- Usa Postgres 16 + Redis 7 (con healthchecks).  
-- Para embeddings, habilita `pgvector`.  
-- Caches NLP en volúmenes persistentes en contenedores.  
+- Usa Postgres 16 + Redis 7 (con healthchecks).
+- Para embeddings, habilita `pgvector`.
+- Caches NLP en volúmenes persistentes en contenedores.
 - En CI/CD, ejecuta `make reset-all` para validar unit + integration.
 
 ---
 
 ## 🧯 Problemas comunes
 
-**Docker sin permisos**  
+**Docker sin permisos**
+
 ```bash
 sudo usermod -aG docker "$USER"  # re-login
 ```
 
-**DB “connection refused”**  
+**DB “connection refused”**
+
 ```bash
 make db-up
 python scripts/check_db.py

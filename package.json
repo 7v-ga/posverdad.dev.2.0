@@ -18,17 +18,18 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "prepare": "husky install"
+    "postinstall": "lefthook install"
   },
   "devDependencies": {
-    "husky": "^9.0.0",
+    "lefthook": "^2.0.2",
     "lint-staged": "^15.2.0",
     "prettier": "^3.3.3",
     "turbo": "^2.5.8"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,md,css,scss,json}": [
-      "prettier --write"
+    "apps/web/**/*.{ts,tsx,js,jsx,json,css,md}": [
+      "pnpm -C apps/web exec eslint --max-warnings=0 --report-unused-disable-directives --cache",
+      "pnpm -C apps/web exec prettier --write"
     ]
   }
 }

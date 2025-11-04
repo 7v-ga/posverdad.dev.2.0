@@ -18,10 +18,7 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [
-        "apps/*/.next/**",
-        "packages/*/dist/**"
-      ]
+      "outputs": [".next/**", "dist/**", "build/**"]
     },
     "test": {
       "outputs": []

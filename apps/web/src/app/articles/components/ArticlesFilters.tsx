@@ -14,18 +14,9 @@ import { useArticlesStore } from '@/store/articles-store'
 
 export default function ArticlesFilters() {
   const { items, filters, setFilters, clearFilters } = useArticlesStore()
-  const [len, setLen] = useState<[number, number]>([
-    filters.lenMin ?? 0,
-    filters.lenMax ?? 8000,
-  ])
-  const [pol, setPol] = useState<[number, number]>([
-    filters.polMin ?? -1,
-    filters.polMax ?? 1,
-  ])
-  const [sub, setSub] = useState<[number, number]>([
-    filters.subMin ?? 0,
-    filters.subMax ?? 1,
-  ])
+  const [len, setLen] = useState<[number, number]>([filters.lenMin ?? 0, filters.lenMax ?? 8000])
+  const [pol, setPol] = useState<[number, number]>([filters.polMin ?? -1, filters.polMax ?? 1])
+  const [sub, setSub] = useState<[number, number]>([filters.subMin ?? 0, filters.subMax ?? 1])
 
   // Permite limpiar desde el botón global de la tabla (evento custom)
   useEffect(() => {
@@ -45,12 +36,16 @@ export default function ArticlesFilters() {
     setLen([filters.lenMin ?? 0, filters.lenMax ?? 8000])
     setPol([filters.polMin ?? -1, filters.polMax ?? 1])
     setSub([filters.subMin ?? 0, filters.subMax ?? 1])
-  }, [filters.lenMin, filters.lenMax, filters.polMin, filters.polMax, filters.subMin, filters.subMax])
+  }, [
+    filters.lenMin,
+    filters.lenMax,
+    filters.polMin,
+    filters.polMax,
+    filters.subMin,
+    filters.subMax,
+  ])
 
-  const sources = useMemo(
-    () => Array.from(new Set(items.map((i) => i.source))).sort(),
-    [items]
-  )
+  const sources = useMemo(() => Array.from(new Set(items.map((i) => i.source))).sort(), [items])
 
   return (
     <Card className="p-4 space-y-4">
