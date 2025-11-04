@@ -1,0 +1,76 @@
+name: Cleanup Dependabot PRs
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Action to perform: close or retarget"
+        required: true
+        default: "close"
+        type: choice
+        options:
+          - close
+          - retarget
+      from_base:
+        description: "Only PRs with this base (e.g., main)"
+        required: true
+        default: "main"
+      to_base:
+        description: "New base when mode=retarget (e.g., develop)"
+        required: false
+        default: "develop"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (no fetch needed)
+        uses: actions/checkout@v4
+
+      - name: Process PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const mode = core.getInput('mode');
+            const fromBase = core.getInput('from_base');
+            const toBase = core.getInput('to_base') || 'develop';
+
+            const prList = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const targetPRs = prList.filter(pr =>
+              (pr.user?.login === 'app/dependabot') &&
+              (pr.base?.ref === fromBase)
+            );
+
+            core.info(`Found ${targetPRs.length} PR(s) from Dependabot with base=${fromBase}`);
+
+            for (const pr of targetPRs) {
+              if (mode === 'close') {
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed',
+                });
+                core.info(`Closed #${pr.number} — ${pr.title}`);
+              } else if (mode === 'retarget') {
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  base: toBase,
+                });
+                core.info(`Retargeted #${pr.number} → base=${toBase}`);
+              } else {
+                core.warning(`Unknown mode=${mode}, skipping #${pr.number}`);
+              }
+            }
