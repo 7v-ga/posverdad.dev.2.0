@@ -28,7 +28,7 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (no fetch needed)
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Process PRs
@@ -46,14 +46,14 @@ jobs:
               per_page: 100,
             });
 
-            const targetPRs = prList.filter(pr =>
-              (pr.user?.login === 'app/dependabot') &&
-              (pr.base?.ref === fromBase)
+            const targets = prList.filter(pr =>
+              pr.user?.login === 'app/dependabot' &&
+              pr.base?.ref === fromBase
             );
 
-            core.info(`Found ${targetPRs.length} PR(s) from Dependabot with base=${fromBase}`);
+            core.info(`Found ${targets.length} PR(s) from Dependabot with base=${fromBase}`);
 
-            for (const pr of targetPRs) {
+            for (const pr of targets) {
               if (mode === 'close') {
                 await github.rest.pulls.update({
                   owner: context.repo.owner,
