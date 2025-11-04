@@ -7,10 +7,14 @@
     "apps/*",
     "packages/*"
   ],
+  "engines": {
+    "node": ">=20 <23",
+    "pnpm": ">=9 <10"
+  },
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "dev:web": "pnpm --filter @posverdad/web dev",
     "dev:api": "pnpm --filter @posverdad/api dev",
+    "dev:web": "pnpm --filter @posverdad/web dev",
     "build": "turbo run build",
     "build:web": "pnpm --filter @posverdad/web build",
     "build:api": "pnpm --filter @posverdad/api build",
@@ -18,13 +22,13 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "postinstall": "lefthook install"
+    "prepare": "lefthook install"
   },
   "devDependencies": {
     "lefthook": "^2.0.2",
     "lint-staged": "^15.2.0",
     "prettier": "^3.3.3",
-    "turbo": "^2.5.8"
+    "turbo": "^2.6.0"
   },
   "lint-staged": {
     "apps/web/**/*.{ts,tsx,js,jsx,json,css,md}": [

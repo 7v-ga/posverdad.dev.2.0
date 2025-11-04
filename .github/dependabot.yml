@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "deps"
+      - "automated"
+    commit-message:
+      prefix: "deps"
+    # Respeta los rangos semver de tu package.json; así normalmente recibirás patch/minor.
+    # Si luego quieres majors, te agrego reglas/grupos separados.

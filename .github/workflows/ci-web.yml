@@ -1,0 +1,99 @@
+name: CI Web (apps/web) — Node 20 & 22
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "apps/web/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - ".github/workflows/ci-web.yml"
+      - "eslint.config.js"
+      - "apps/web/eslint.config.js"
+  push:
+    branches: [develop, main]
+    paths:
+      - "apps/web/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - ".github/workflows/ci-web.yml"
+      - "eslint.config.js"
+      - "apps/web/eslint.config.js"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint • Typecheck • Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20.19.5", "22.x"]
+
+    env:
+      PNPM_VERSION: "9.0.0"
+      TURBO_CACHE_DIR: .turbo
+      PNPM_CACHE_DIR: ~/.pnpm-store
+
+    steps:
+      - name: 🧾 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: "pnpm"
+
+      - name: 🚀 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: ♻️ Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_CACHE_DIR }}
+          key: pnpm-store-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-${{ matrix.node }}-
+
+      - name: 📦 Install (frozen lockfile)
+        run: |
+          pnpm config set store-dir $PNPM_CACHE_DIR
+          pnpm install --frozen-lockfile
+
+      - name: ♻️ Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TURBO_CACHE_DIR }}
+          key: turbo-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ matrix.node }}-
+
+      # Ejecutamos con Turbo para aprovechar su caching de tareas.
+      - name: 🔧 Lint (apps/web) — no warnings
+        run: pnpm dlx turbo run lint --filter=./apps/web -- --max-warnings=0
+
+      - name: 🔎 Typecheck (apps/web)
+        run: pnpm dlx turbo run typecheck --filter=./apps/web
+
+      - name: 🏗️ Build (apps/web)
+        run: pnpm dlx turbo run build --filter=./apps/web
+
+      - name: 📤 Save Turbo cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.TURBO_CACHE_DIR }}
+          key: turbo-${{ runner.os }}-${{ matrix.node }}-${{ hashFiles('turbo.json', 'pnpm-lock.yaml') }}

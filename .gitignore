@@ -90,3 +90,9 @@ apps/*/.next/
 
 .lefthook/
 
+
+# ESLint/TS build info
+.eslintcache
+**/*.tsbuildinfo
+apps/*/.eslintcache
+apps/*/tsconfig.tsbuildinfo
