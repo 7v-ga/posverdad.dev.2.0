@@ -1,0 +1,1459 @@
+[
+  {
+    "assignees": [],
+    "body": "Script que crea usuario admin/read y 2 fuentes demo para desarrollo.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNLzIkQ",
+        "name": "good first issue",
+        "description": "Good for newcomers",
+        "color": "7057ff"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXDdw",
+        "name": "devx",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 2,
+      "title": "Sprint 1 — FE+API read-only",
+      "description": "FE->API real (read-only), server-side table, cursors, seeds, role badge",
+      "dueOn": "2025-11-07T00:00:00Z"
+    },
+    "number": 31,
+    "state": "OPEN",
+    "title": "GOOD FIRST ISSUE: Script de seed (usuarios/fuentes dummy)"
+  },
+  {
+    "assignees": [],
+    "body": "Badge visual (admin/read) reutilizable en tablas y vistas de detalle.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNLzIkQ",
+        "name": "good first issue",
+        "description": "Good for newcomers",
+        "color": "7057ff"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 2,
+      "title": "Sprint 1 — FE+API read-only",
+      "description": "FE->API real (read-only), server-side table, cursors, seeds, role badge",
+      "dueOn": "2025-11-07T00:00:00Z"
+    },
+    "number": 30,
+    "state": "OPEN",
+    "title": "GOOD FIRST ISSUE: Componente Badge de roles"
+  },
+  {
+    "assignees": [],
+    "body": "Flujos críticos: login, listar/filtrar, editar entidad, bulk ops, crear job, ver dashboard.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXHhg",
+        "name": "qa",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXJug",
+        "name": "tests",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 5,
+      "title": "Sprint 4 — Perf+Observabilidad+QA",
+      "description": "Caching, observabilidad, a11y, e2e smoke",
+      "dueOn": "2025-12-19T00:00:00Z"
+    },
+    "number": 29,
+    "state": "OPEN",
+    "title": "QA: test e2e smoke (Playwright)"
+  },
+  {
+    "assignees": [],
+    "body": "Guías de uso de interfaz, bulk ops, programación de scrapes. Runbooks de incidentes comunes.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXDpw",
+        "name": "docs",
+        "description": "Documentación y README",
+        "color": "0052cc"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXG2w",
+        "name": "ops",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 28,
+    "state": "OPEN",
+    "title": "Documentación de usuario y runbooks"
+  },
+  {
+    "assignees": [],
+    "body": "Log JSON, Prometheus metrics (api), trace básico (OpenTelemetry). Dash Kibana/Grafana.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXGKA",
+        "name": "observability",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXG2w",
+        "name": "ops",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 5,
+      "title": "Sprint 4 — Perf+Observabilidad+QA",
+      "description": "Caching, observabilidad, a11y, e2e smoke",
+      "dueOn": "2025-12-19T00:00:00Z"
+    },
+    "number": 27,
+    "state": "OPEN",
+    "title": "Observabilidad (logging estructurado, métricas, tracing)"
+  },
+  {
+    "assignees": [],
+    "body": "Definir docker-compose para dev y prod; opcional: charts Helm para k8s.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXFJA",
+        "name": "infra",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXG2w",
+        "name": "ops",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 26,
+    "state": "OPEN",
+    "title": "Infra-as-code (Docker Compose/K8s opcional)"
+  },
+  {
+    "assignees": [],
+    "body": "CSP estricta, helmet headers (Next), rate limit en FastAPI, auditoría extendida.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXI6A",
+        "name": "security",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 25,
+    "state": "OPEN",
+    "title": "Hardening seguridad (CSP, rate limiting, audit trail ampliado)"
+  },
+  {
+    "assignees": [],
+    "body": "Cache con invalidación por tabla/entidad; TTLs por vista.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXBgA",
+        "name": "cache",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXG-g",
+        "name": "performance",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 5,
+      "title": "Sprint 4 — Perf+Observabilidad+QA",
+      "description": "Caching, observabilidad, a11y, e2e smoke",
+      "dueOn": "2025-12-19T00:00:00Z"
+    },
+    "number": 24,
+    "state": "OPEN",
+    "title": "Capa de caching (Redis) para endpoints de lectura pesada"
+  },
+  {
+    "assignees": [],
+    "body": "Vistas y queries optimizadas; charts interactivos; export CSV/PNG.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-Nw",
+        "name": "P2",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-3g",
+        "name": "analytics",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 23,
+    "state": "CLOSED",
+    "title": "Dashboards avanzados (cohortes, distribución de polaridad, NER por fuente)"
+  },
+  {
+    "assignees": [],
+    "body": "Roles aria, foco, atajos teclado (k), contraste, tests básicos con axe.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-BQ",
+        "name": "P1",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-lQ",
+        "name": "a11y",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 5,
+      "title": "Sprint 4 — Perf+Observabilidad+QA",
+      "description": "Caching, observabilidad, a11y, e2e smoke",
+      "dueOn": "2025-12-19T00:00:00Z"
+    },
+    "number": 22,
+    "state": "CLOSED",
+    "title": "Mejoras de accesibilidad (a11y) y navegación"
+  },
+  {
+    "assignees": [],
+    "body": "Cambiar offset por cursor-keyset donde aplique. Documentar límites.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-BQ",
+        "name": "P1",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXG-g",
+        "name": "performance",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNrceJQ",
+        "name": "blocked",
+        "description": "",
+        "color": "BFDADC"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 2,
+      "title": "Sprint 1 — FE+API read-only",
+      "description": "FE->API real (read-only), server-side table, cursors, seeds, role badge",
+      "dueOn": "2025-11-07T00:00:00Z"
+    },
+    "number": 21,
+    "state": "CLOSED",
+    "title": "Paginación eficiente y cursores en API"
+  },
+  {
+    "assignees": [],
+    "body": "Reglas para URL canónica, fechas, longitudes mínimas; métricas en v_run_summary.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-BQ",
+        "name": "P1",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXCXg",
+        "name": "data-quality",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXC8w",
+        "name": "db",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 20,
+    "state": "CLOSED",
+    "title": "Validaciones de calidad del dato previas a insert"
+  },
+  {
+    "assignees": [],
+    "body": "Endpoints y UI para fusionar entidades duplicadas; mantener audit log y reindexar vínculos.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-BQ",
+        "name": "P1",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXCXg",
+        "name": "data-quality",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEQw",
+        "name": "entities",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 19,
+    "state": "CLOSED",
+    "title": "Reconciliación de entidades (merge/split)"
+  },
+  {
+    "assignees": [],
+    "body": "Crear índice GIN; endpoint de búsqueda con ranking/ts_headline. UI de búsqueda avanzada.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-BQ",
+        "name": "P1",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXCXg",
+        "name": "data-quality",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXC8w",
+        "name": "db",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXIsw",
+        "name": "search",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 18,
+    "state": "CLOSED",
+    "title": "Buscador full-text (Postgres tsvector) en artículos"
+  },
+  {
+    "assignees": [],
+    "body": "Workflow para web y api; cache de deps; build/push a registry; branch protections.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXB3Q",
+        "name": "ci",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXDdw",
+        "name": "devx",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXFJA",
+        "name": "infra",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 17,
+    "state": "CLOSED",
+    "title": "CI/CD GitHub Actions (lint, test, build, docker)"
+  },
+  {
+    "assignees": [],
+    "body": "UI /dashboards/overview: tarjetas KPIs, charts mínimos (artículos/día, duración). Server-side fetch.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-3g",
+        "name": "analytics",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNrceJQ",
+        "name": "blocked",
+        "description": "",
+        "color": "BFDADC"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 4,
+      "title": "Sprint 3 — Jobs+Notificaciones+Dashboard",
+      "description": "API jobs, programación scrapes, Slack, dashboard básico",
+      "dueOn": "2025-12-05T00:00:00Z"
+    },
+    "number": 16,
+    "state": "CLOSED",
+    "title": "Dashboard básico (KPIs run actual y últimos 30)"
+  },
+  {
+    "assignees": [],
+    "body": "Refactor notifier para usar chat.postMessage + fallback de archivo si aplica. Evitar métodos deprecated.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXFjA",
+        "name": "notifications",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXG2w",
+        "name": "ops",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXJVg",
+        "name": "slack",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 4,
+      "title": "Sprint 3 — Jobs+Notificaciones+Dashboard",
+      "description": "API jobs, programación scrapes, Slack, dashboard básico",
+      "dueOn": "2025-12-05T00:00:00Z"
+    },
+    "number": 15,
+    "state": "CLOSED",
+    "title": "Notificaciones Slack: resumen de run y manejo de errores"
+  },
+  {
+    "assignees": [],
+    "body": "Endpoints /jobs (POST/GET) y /jobs/{id}/run. Integración con Celery/Redis; modelo Job/Run en DB.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXHxQ",
+        "name": "queue",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXITw",
+        "name": "scraper",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 4,
+      "title": "Sprint 3 — Jobs+Notificaciones+Dashboard",
+      "description": "API jobs, programación scrapes, Slack, dashboard básico",
+      "dueOn": "2025-12-05T00:00:00Z"
+    },
+    "number": 14,
+    "state": "CLOSED",
+    "title": "API jobs: crear, listar, disparar, consultar estado"
+  },
+  {
+    "assignees": [],
+    "body": "Pantalla /jobs: crear job con fuente/parámetros/limites duplicados; disparo manual; ver estado.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXITw",
+        "name": "scraper",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNrceJQ",
+        "name": "blocked",
+        "description": "",
+        "color": "BFDADC"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 4,
+      "title": "Sprint 3 — Jobs+Notificaciones+Dashboard",
+      "description": "API jobs, programación scrapes, Slack, dashboard básico",
+      "dueOn": "2025-12-05T00:00:00Z"
+    },
+    "number": 13,
+    "state": "CLOSED",
+    "title": "Programación de scrapes desde UI (creación y ejecución manual)"
+  },
+  {
+    "assignees": [],
+    "body": "Ocultar/inhabilitar acciones según rol. Guardas de ruta; server actions con verificación de claims.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAOg",
+        "name": "auth",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXI6A",
+        "name": "security",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 3,
+      "title": "Sprint 2 — Entidades+Auditoría+Auth",
+      "description": "Single+Bulk entidades, audit log, UI por roles",
+      "dueOn": "2025-11-21T00:00:00Z"
+    },
+    "number": 12,
+    "state": "CLOSED",
+    "title": "Control de acceso UI por roles"
+  },
+  {
+    "assignees": [],
+    "body": "Tabla audit_log (quién/qué/antes/después/cuándo). Decorador en endpoints mutables; vista /audit-log.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXGKA",
+        "name": "observability",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXI6A",
+        "name": "security",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 3,
+      "title": "Sprint 2 — Entidades+Auditoría+Auth",
+      "description": "Single+Bulk entidades, audit log, UI por roles",
+      "dueOn": "2025-11-21T00:00:00Z"
+    },
+    "number": 11,
+    "state": "CLOSED",
+    "title": "Bitácora de cambios (audit log)"
+  },
+  {
+    "assignees": [],
+    "body": "Selección múltiple en tabla + acción masiva. Endpoint POST /entities/bulk con operaciones atómicas.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXA9g",
+        "name": "bulk",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNrceJQ",
+        "name": "blocked",
+        "description": "",
+        "color": "BFDADC"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 3,
+      "title": "Sprint 2 — Entidades+Auditoría+Auth",
+      "description": "Single+Bulk entidades, audit log, UI por roles",
+      "dueOn": "2025-11-21T00:00:00Z"
+    },
+    "number": 10,
+    "state": "CLOSED",
+    "title": "Bulk ops de entidades (alias/bloqueo)"
+  },
+  {
+    "assignees": [],
+    "body": "Form modal para editar alias y flag de bloqueo. Validaciones mínimas. PATCH /entities/{id}.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 3,
+      "title": "Sprint 2 — Entidades+Auditoría+Auth",
+      "description": "Single+Bulk entidades, audit log, UI por roles",
+      "dueOn": "2025-11-21T00:00:00Z"
+    },
+    "number": 9,
+    "state": "CLOSED",
+    "title": "Edición de entidades: alias y bloqueo (single edit)"
+  },
+  {
+    "assignees": [],
+    "body": "Next.js page /entities con filtros (tipo, alias, bloqueadas), paginación. Integra API /entities.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 8,
+    "state": "CLOSED",
+    "title": "Tabla de Entidades con búsqueda y filtros"
+  },
+  {
+    "assignees": [],
+    "body": "Next.js page /articles con filtros (fecha, fuente, entidad, texto), paginación, ordenamiento. Integra API GET /articles.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNrceJQ",
+        "name": "blocked",
+        "description": "",
+        "color": "BFDADC"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 2,
+      "title": "Sprint 1 — FE+API read-only",
+      "description": "FE->API real (read-only), server-side table, cursors, seeds, role badge",
+      "dueOn": "2025-11-07T00:00:00Z"
+    },
+    "number": 7,
+    "state": "CLOSED",
+    "title": "Tabla de Artículos (DataGrid) con filtros server-side"
+  },
+  {
+    "assignees": [],
+    "body": "Layout (sidebar/header), theming, error boundary, toasts, loading states. Sonarqube/ESLint/Prettier.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXDdw",
+        "name": "devx",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXKdQ",
+        "name": "ui",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 6,
+    "state": "CLOSED",
+    "title": "UI base: shell Next.js + Tailwind + shadcn/ui"
+  },
+  {
+    "assignees": [],
+    "body": "JWT con refresh; roles admin/read. Middlewares en FastAPI; seed de usuarios. Entregable: /api/auth/*",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAOg",
+        "name": "auth",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXI6A",
+        "name": "security",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 5,
+    "state": "CLOSED",
+    "title": "API de autenticación + RBAC mínima (admin/read)"
+  },
+  {
+    "assignees": [],
+    "body": "Revisar schema.sql y views (v_run_summary, v_run_top_sources, v_run_entities_top, v_run_top_articles, v_run_sentiment_bins). Corregir GROUP BY/aggregates; llaves; índices. Entregable: migraciones alembic.",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW-3g",
+        "name": "analytics",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXCXg",
+        "name": "data-quality",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXC8w",
+        "name": "db",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 4,
+    "state": "CLOSED",
+    "title": "Normalizar esquema DB y vistas de reporting"
+  },
+  {
+    "assignees": [],
+    "body": "Definir esquemas pydantic, endpoints list/get/create/update/bulk, filtros y paginación. Entregable: /api/openapi.json",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_NA",
+        "name": "api",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXC8w",
+        "name": "db",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": {
+      "number": 2,
+      "title": "Sprint 1 — FE+API read-only",
+      "description": "FE->API real (read-only), server-side table, cursors, seeds, role badge",
+      "dueOn": "2025-11-07T00:00:00Z"
+    },
+    "number": 3,
+    "state": "OPEN",
+    "title": "Generar OpenAPI (FastAPI) para Articles/Entities/Sources"
+  },
+  {
+    "assignees": [],
+    "body": "Crear monorepo (pnpm workspaces o turborepo). Paquetes: web (Next.js), api (FastAPI), shared (tipos/contratos), infra (IaC opcional).",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXDdw",
+        "name": "devx",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXFJA",
+        "name": "infra",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXIGA",
+        "name": "repo",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 2,
+    "state": "OPEN",
+    "title": "Configurar monorepo y estructura de carpetas"
+  },
+  {
+    "assignees": [],
+    "body": "Documento ADR que justifique la arquitectura elegida, trade-offs, y cómo migraremos desde el estado actual. Entregable: /docs/adr/0001-architecture.md",
+    "labels": [
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW9lA",
+        "name": "P0",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMW_zg",
+        "name": "architecture",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXAcg",
+        "name": "backend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXDpw",
+        "name": "docs",
+        "description": "Documentación y README",
+        "color": "0052cc"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACNMXEtA",
+        "name": "frontend",
+        "description": "auto-import",
+        "color": "0366d6"
+      },
+      {
+        "id": "LA_kwDOQDzXBs8AAAACPDuYcQ",
+        "name": "stale",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "milestone": null,
+    "number": 1,
+    "state": "OPEN",
+    "title": "Definir arquitectura final (Next.js + FastAPI + Postgres + Redis) y ADR inicial"
+  }
+]

@@ -84,6 +84,14 @@ dev-down: compose-down ## Bajar stack de desarrollo con docker compose
 doctor: status-db ## Ver estado y conexión de la base de datos
 
 # =============================================================================
+# Backend (apps/api) — utilidades
+# =============================================================================
+
+.PHONY: api-dev
+api-dev:  ## Levantar FastAPI en modo desarrollo
+	@$(PYTHON) -m uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
+
+# =============================================================================
 # Frontend (apps/web) — utilidades
 # =============================================================================
 

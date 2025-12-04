@@ -45,7 +45,35 @@ export default function ArticlesFilters() {
     filters.subMax,
   ])
 
-  const sources = useMemo(() => Array.from(new Set(items.map((i) => i.source))).sort(), [items])
+  // 🔧 Normalizar fuente a string (name/domain/id/JSON) para usarla como key y valor de filtro
+  const sources = useMemo(() => {
+    const normalized = items
+      .map((i: any) => {
+        const s = i?.source
+        if (s == null) return null
+
+        if (typeof s === 'string' || typeof s === 'number') {
+          return String(s)
+        }
+
+        if (typeof s === 'object') {
+          if (typeof s.name === 'string') return s.name
+          if (typeof s.domain === 'string') return s.domain
+          if (s.id != null) return String(s.id)
+          // fallback defensivo
+          try {
+            return JSON.stringify(s)
+          } catch {
+            return String(s)
+          }
+        }
+
+        return String(s)
+      })
+      .filter((v): v is string => !!v)
+
+    return Array.from(new Set(normalized)).sort()
+  }, [items])
 
   return (
     <Card className="p-4 space-y-4">

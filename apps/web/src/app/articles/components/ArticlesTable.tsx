@@ -96,15 +96,30 @@ export default function ArticlesTable() {
       const sub = a.subjectivity ?? 0
 
       if (q && !`${a.title} ${a.url}`.toLowerCase().includes(q)) return false
-      if (filters.sources.length && !filters.sources.includes(a.source)) return false
+
+      // Normalizamos la fuente a string, porque del backend puede venir como objeto
+      const sourceLabel =
+        typeof a.source === 'string'
+          ? a.source
+          : a.source && typeof a.source === 'object'
+            ? ((a.source as any).name ?? (a.source as any).domain ?? '')
+            : ''
+
+      if (filters.sources.length && !filters.sources.includes(sourceLabel)) return false
+
       if (filters.lenMin != null && a.len_chars < filters.lenMin) return false
       if (filters.lenMax != null && a.len_chars > filters.lenMax) return false
       if (filters.polMin != null && pol < filters.polMin) return false
       if (filters.polMax != null && pol > filters.polMax) return false
       if (filters.subMin != null && sub < filters.subMin) return false
       if (filters.subMax != null && sub > filters.subMax) return false
-      if (filters.dateFrom && new Date(a.published_at) < new Date(filters.dateFrom)) return false
-      if (filters.dateTo && new Date(a.published_at) > new Date(filters.dateTo)) return false
+      if (filters.dateFrom && a.published_at) {
+        if (new Date(a.published_at) < new Date(filters.dateFrom)) return false
+      }
+      if (filters.dateTo && a.published_at) {
+        if (new Date(a.published_at) > new Date(filters.dateTo)) return false
+      }
+
       return true
     })
   }, [items, filters])
@@ -126,13 +141,49 @@ export default function ArticlesTable() {
           </a>
         ),
       },
-      { accessorKey: 'source', header: 'Fuente' },
+      {
+        accessorKey: 'source',
+        header: 'Fuente',
+        cell: (ctx) => {
+          const value = ctx.getValue() as any
+          if (!value) return '—'
+          if (typeof value === 'string') return value
+          if (typeof value === 'object') {
+            // Backend: { id, name, domain } o similar
+            return value.name ?? value.domain ?? String(value.id ?? '')
+          }
+          return String(value)
+        },
+      },
       {
         accessorKey: 'published_at',
         header: 'Fecha',
-        cell: (ctx) => formatDate(ctx.getValue() as string),
+        cell: (ctx) => {
+          const raw = ctx.getValue() as string | null
+          if (!raw) return '—'
+          return formatDate(raw)
+        },
       },
-      { accessorKey: 'len_chars', header: 'Longitud' },
+      {
+        accessorKey: 'len_chars',
+        header: 'Longitud',
+        cell: (ctx) => {
+          const value = ctx.getValue() as number | null | undefined
+          const row = ctx.row.original as any
+
+          // Si viene calculada desde el backend
+          if (typeof value === 'number' && value > 0) {
+            return value.toString()
+          }
+
+          // Fallback: si el backend devuelve el body del artículo, usamos su length
+          if (row && typeof row.body === 'string' && row.body.length > 0) {
+            return row.body.length.toString()
+          }
+
+          return '—'
+        },
+      },
       { accessorKey: 'polarity', header: 'Polaridad' },
       { accessorKey: 'subjectivity', header: 'Subjetividad' },
       {

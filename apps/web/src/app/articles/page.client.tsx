@@ -11,18 +11,24 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ArticlesTable from './components/ArticlesTable'
 import ArticlesFilters from './components/ArticlesFilters'
 
+// Se resuelve en build/hydration. Si cambias .env.local, reinicia `pnpm dev`.
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
+
 export default function ArticlesPageClient() {
-  const { items, setItems, setLoading, loading, filters, setFilters } = useArticlesStore()
+  const { setItems, filters, setFilters } = useArticlesStore()
+
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  // Hidratar filtros desde la URL en el primer render
+  // 1) Hidratar filtros desde la URL en el primer render
   useEffect(() => {
     const sp = new URLSearchParams(searchParams.toString())
     const qs = fromQS(sp)
+
     setFilters({
       q: qs.str('q'),
       sources: qs.arr('source'),
@@ -38,7 +44,7 @@ export default function ArticlesPageClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Empujar cambios de filtros a la URL (sin recargar página)
+  // 2) Reflejar cambios de filtros en la URL (qs) sin recargar
   useEffect(() => {
     const qs = toQS({
       q: filters.q,
@@ -52,35 +58,77 @@ export default function ArticlesPageClient() {
       subMin: filters.subMin ?? undefined,
       subMax: filters.subMax ?? undefined,
     })
+
     const href = (qs ? `${pathname}${qs}` : pathname) as Route
     router.replace(href, { scroll: false })
   }, [filters, pathname, router])
 
-  // Cargar datos mock (una vez)
+  // 3) Cargar datos desde FastAPI siempre al montar
   useEffect(() => {
     let mounted = true
+
     async function load() {
-      setLoading(true)
+      setIsLoading(true)
+      setError(null)
+
       try {
-        const res = await fetch('/api/articles')
-        const data = (await res.json()) as ArticlesResponse
+        if (!API_BASE) {
+          throw new Error(
+            'NEXT_PUBLIC_API_BASE_URL no está definida (revisa apps/web/.env.local y reinicia `pnpm dev`).',
+          )
+        }
+
+        const url = new URL('/articles/', API_BASE)
+        url.searchParams.set('limit', '500') // ajusta el límite si quieres
+
+        const res = await fetch(url.toString(), {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        if (!res.ok) {
+          throw new Error(`Error ${res.status} al cargar artículos (HTTP ${res.status})`)
+        }
+
+        // FastAPI devuelve lista simple -> adaptamos al tipo de items
+        const raw = (await res.json()) as unknown as ArticlesResponse['items']
         if (!mounted) return
-        setItems(data.items, data.total)
-      } catch {
-        setError('No se pudieron cargar los artículos')
+
+        const total = Array.isArray(raw) ? raw.length : 0
+        setItems(raw ?? [], total)
+      } catch (e: any) {
+        console.error('Error cargando artículos desde API:', e)
+        if (mounted) {
+          setError(e?.message ?? 'No se pudieron cargar los artículos desde la API')
+        }
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
-    if (items.length === 0) load()
+
+    void load()
+
     return () => {
       mounted = false
     }
-  }, [items.length, setItems, setLoading])
+  }, [setItems])
 
   const content = useMemo(() => {
-    if (loading) return <Skeleton className="h-64 w-full" />
-    if (error) return <div className="text-red-600">{error}</div>
+    if (isLoading) {
+      return <Skeleton className="h-64 w-full" data-slot="skeleton" />
+    }
+
+    if (error) {
+      return (
+        <div className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-semibold">Error al cargar artículos</p>
+          <p className="mt-1 whitespace-pre-line">{error}</p>
+        </div>
+      )
+    }
+
     return (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <aside className="lg:col-span-3">
@@ -93,7 +141,7 @@ export default function ArticlesPageClient() {
         </section>
       </div>
     )
-  }, [loading, error])
+  }, [isLoading, error])
 
   return content
 }
