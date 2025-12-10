@@ -97,20 +97,18 @@ export default function ArticlesTable() {
 
       if (q && !`${a.title} ${a.url}`.toLowerCase().includes(q)) return false
 
-      // Normalizamos la fuente a string, porque del backend puede venir como objeto
-      const sourceLabel =
-        typeof a.source === 'string'
-          ? a.source
-          : a.source && typeof a.source === 'object'
-            ? ((a.source as any).name ?? (a.source as any).domain ?? '')
-            : ''
+      // Normalizamos la fuente a string (string o Source)
+      let sourceLabel = ''
+      if (typeof a.source === 'string') {
+        sourceLabel = a.source
+      } else if (a.source) {
+        sourceLabel = a.source.name ?? a.source.domain ?? String(a.source.id)
+      }
 
       if (filters.sources.length && !filters.sources.includes(sourceLabel)) return false
 
-      if (filters.lenMin != null && a.len_chars != null && a.len_chars < filters.lenMin)
-        return false
-      if (filters.lenMax != null && a.len_chars != null && a.len_chars > filters.lenMax)
-        return false
+      if (filters.lenMin != null && a.len_chars < filters.lenMin) return false
+      if (filters.lenMax != null && a.len_chars > filters.lenMax) return false
       if (filters.polMin != null && pol < filters.polMin) return false
       if (filters.polMax != null && pol > filters.polMax) return false
       if (filters.subMin != null && sub < filters.subMin) return false
@@ -147,14 +145,10 @@ export default function ArticlesTable() {
         accessorKey: 'source',
         header: 'Fuente',
         cell: (ctx) => {
-          const value = ctx.getValue() as any
+          const value = ctx.row.original.source
           if (!value) return '—'
           if (typeof value === 'string') return value
-          if (typeof value === 'object') {
-            // Backend: { id, name, domain } o similar
-            return value.name ?? value.domain ?? String(value.id ?? '')
-          }
-          return String(value)
+          return value.name ?? value.domain ?? String(value.id)
         },
       },
       {
@@ -170,32 +164,20 @@ export default function ArticlesTable() {
         accessorKey: 'len_chars',
         header: 'Longitud',
         cell: (ctx) => {
-          const raw = ctx.getValue() as number | null | undefined
-          const row = ctx.row.original as any
+          const value = ctx.row.original.len_chars
+          const row = ctx.row.original
 
-          let len: number | null = null
-
-          // 1) len_chars desde el backend (cualquier número >= 0)
-          if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) {
-            len = raw
-          }
-          // 2) Fallback: si el backend devolviera el body en el listado
-          else if (row && typeof row.body === 'string' && row.body.length > 0) {
-            len = row.body.length
-          }
-          // 3) Fallback extra: si en algún momento guardamos body_len en preprocessed_data
-          else if (
-            row &&
-            row.preprocessed_data &&
-            typeof row.preprocessed_data === 'object' &&
-            typeof (row.preprocessed_data as any).body_len === 'number' &&
-            Number.isFinite((row.preprocessed_data as any).body_len) &&
-            (row.preprocessed_data as any).body_len >= 0
-          ) {
-            len = (row.preprocessed_data as any).body_len
+          // Si viene calculada desde el backend
+          if (typeof value === 'number' && value > 0) {
+            return value.toString()
           }
 
-          return typeof len === 'number' ? String(len) : '—'
+          // Fallback: si el backend devuelve el body del artículo, usamos su length
+          if (typeof row.body === 'string' && row.body.length > 0) {
+            return row.body.length.toString()
+          }
+
+          return '—'
         },
       },
       { accessorKey: 'polarity', header: 'Polaridad' },

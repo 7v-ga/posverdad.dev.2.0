@@ -6,28 +6,37 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useArticlesStore } from '@/store/articles-store'
+import type { Article, Entity } from '@/lib/schemas'
 
 type EntitiesDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+type RawEntity = {
+  text?: string
+  label?: string
+  name?: string
+}
+
+type ArticleWithPreprocessed = Article & {
+  preprocessed_data?: {
+    entities?: RawEntity[]
+    [key: string]: unknown
+  } | null
+}
+
 export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogProps) {
-  const sel = useArticlesStore((s) => s.selection)
+  const sel = useArticlesStore((s) => s.selection) as ArticleWithPreprocessed | null
 
   const updateEntity = useArticlesStore((s) => s.updateEntity)
   const addAlias = useArticlesStore((s) => s.addAlias)
   const removeAlias = useArticlesStore((s) => s.removeAlias)
 
-  const normalizedEntities = sel?.entities ?? []
+  const normalizedEntities: Entity[] = sel?.entities ?? []
 
-  const rawJsonEntities: any[] =
-    sel &&
-    (sel as any).preprocessed_data &&
-    typeof (sel as any).preprocessed_data === 'object' &&
-    Array.isArray((sel as any).preprocessed_data.entities)
-      ? (sel as any).preprocessed_data.entities
-      : []
+  const rawEntitiesSource = sel?.preprocessed_data?.entities
+  const rawJsonEntities: RawEntity[] = Array.isArray(rawEntitiesSource) ? rawEntitiesSource : []
 
   const hasNormalized = normalizedEntities.length > 0
   const hasRaw = rawJsonEntities.length > 0
@@ -51,7 +60,7 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Editar entidades — {(sel as any).title}</DialogTitle>
+          <DialogTitle>Editar entidades — {sel.title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -151,7 +160,7 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
                     className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
                   >
                     <span className="mr-1 font-semibold">{e.label ?? 'ENT'}</span>
-                    <span>{e.text ?? e.name}</span>
+                    <span>{e.text ?? e.name ?? '—'}</span>
                   </span>
                 ))}
               </div>

@@ -1,89 +1,114 @@
-// apps/web/src/app/articles/ArticleDetailDialog.tsx
 'use client'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
-import type { Article } from '@/lib/schemas'
+import type { Article, Entity } from '@/lib/schemas'
+
+type RawEntity = {
+  text?: string
+  label?: string
+  name?: string
+}
+
+type PreprocessedData = {
+  len_chars?: number | null
+  body_len?: number | null
+  entities?: RawEntity[]
+  [key: string]: unknown
+}
+
+type ArticleWithExtras = Article & {
+  publication_date?: string | null
+  scraped_at?: string | null
+  preprocessed_data?: PreprocessedData | null
+}
 
 type Props = {
-  article: Article | null
+  article: ArticleWithExtras | null
   onClose: () => void
+}
+
+// Mapea labels crudos (PER, MISC, etc.) al enum de Entity.type
+function mapLabelToType(label?: string): Entity['type'] {
+  if (!label) return 'OTHER'
+  const upper = label.toUpperCase()
+
+  if (upper === 'PER' || upper === 'PERSON') return 'PERSON'
+  if (upper === 'ORG') return 'ORG'
+  if (upper === 'LOC' || upper === 'GPE') return 'LOC'
+  if (upper === 'EVENT') return 'EVENT'
+  if (upper === 'WORK_OF_ART') return 'WORK_OF_ART'
+  if (upper === 'PRODUCT') return 'PRODUCT'
+
+  // MISC, etc.
+  return 'OTHER'
 }
 
 export default function ArticleDetailDialog({ article, onClose }: Props) {
   if (!article) return null
 
-  const a: any = article
-
   // ---- Fuente ----
-  const rawSource = a.source
-  const sourceLabel =
-    typeof rawSource === 'string'
-      ? rawSource
-      : rawSource && typeof rawSource === 'object'
-        ? (rawSource.name ?? rawSource.domain ?? '[sin fuente]')
-        : '[sin fuente]'
+  const rawSource = article.source
+  let sourceLabel = '[sin fuente]'
+  if (typeof rawSource === 'string') {
+    sourceLabel = rawSource || '[sin fuente]'
+  } else if (rawSource) {
+    sourceLabel = rawSource.name ?? rawSource.domain ?? '[sin fuente]'
+  }
 
   // ---- Fecha (varios posibles campos) ----
   const rawDate =
-    a.published_at ??
-    a.publication_date ?? // típico en DB
-    a.scraped_at ?? // por si solo tienes fecha de scrapeo
+    article.published_at ??
+    article.publication_date ?? // típico en DB
+    article.scraped_at ?? // por si solo tienes fecha de scrapeo
     null
 
   const dateLabel = rawDate ? formatDate(rawDate) : '—'
 
-  // ---- Longitud (varios posibles campos, más defensivo) ----
+  // ---- Longitud (varios posibles campos) ----
   const lenFromField =
-    typeof a.len_chars === 'number' && Number.isFinite(a.len_chars) && a.len_chars >= 0
-      ? a.len_chars
-      : typeof a.length === 'number' && Number.isFinite(a.length) && a.length >= 0
-        ? a.length
-        : null
+    typeof article.len_chars === 'number' && article.len_chars > 0 ? article.len_chars : null
 
-  const lenFromBody = typeof a.body === 'string' && a.body.length > 0 ? a.body.length : null
+  const lenFromBody =
+    typeof article.body === 'string' && article.body.length > 0 ? article.body.length : null
 
   const lenFromPreprocessed =
-    a.preprocessed_data && typeof a.preprocessed_data === 'object'
-      ? (() => {
-          const pp = a.preprocessed_data as any
-          if (
-            typeof pp.len_chars === 'number' &&
-            Number.isFinite(pp.len_chars) &&
-            pp.len_chars >= 0
-          ) {
-            return pp.len_chars
-          }
-          if (typeof pp.body_len === 'number' && Number.isFinite(pp.body_len) && pp.body_len >= 0) {
-            return pp.body_len
-          }
-          return null
-        })()
-      : null
+    article.preprocessed_data?.len_chars ?? article.preprocessed_data?.body_len ?? null
 
   const lenChars = lenFromField ?? lenFromBody ?? lenFromPreprocessed
   const lenLabel = typeof lenChars === 'number' ? lenChars.toString() : '—'
 
   // ---- Sentimiento ----
-  const polarity =
-    typeof a.polarity === 'number' && Number.isFinite(a.polarity) ? a.polarity.toFixed(3) : '—'
+  const polarity = typeof article.polarity === 'number' ? article.polarity.toFixed(3) : '—'
   const subjectivity =
-    typeof a.subjectivity === 'number' && Number.isFinite(a.subjectivity)
-      ? a.subjectivity.toFixed(3)
-      : '—'
+    typeof article.subjectivity === 'number' ? article.subjectivity.toFixed(3) : '—'
 
   // ---- Entidades ----
-  const entities: any[] = Array.isArray(a.entities) ? a.entities : []
-  const rawEntities: any[] =
-    a.preprocessed_data &&
-    typeof a.preprocessed_data === 'object' &&
-    Array.isArray(a.preprocessed_data.entities)
-      ? a.preprocessed_data.entities
+  const normalizedEntities: Entity[] = Array.isArray(article.entities) ? article.entities : []
+
+  // Si no hay entidades normalizadas, caemos a las crudas del preprocessed_data
+  let entitiesToShow: Entity[] = normalizedEntities
+
+  if (entitiesToShow.length === 0) {
+    const rawEntities: RawEntity[] = Array.isArray(article.preprocessed_data?.entities)
+      ? article.preprocessed_data!.entities!
       : []
 
-  const hasNormalized = entities.length > 0
-  const hasRaw = rawEntities.length > 0
+    if (rawEntities.length > 0) {
+      entitiesToShow = rawEntities.map(
+        (re, idx): Entity => ({
+          id: `raw-${idx}`,
+          name: re.text ?? re.name ?? '(sin texto)',
+          type: mapLabelToType(re.label),
+          aliases: [],
+          blocked: false,
+        }),
+      )
+    }
+  }
+
+  const hasEntities = entitiesToShow.length > 0
 
   return (
     <Dialog
@@ -94,7 +119,7 @@ export default function ArticleDetailDialog({ article, onClose }: Props) {
     >
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{a.title}</DialogTitle>
+          <DialogTitle>{article.title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -111,12 +136,12 @@ export default function ArticleDetailDialog({ article, onClose }: Props) {
             <div>
               <div className="text-xs text-muted-foreground">URL</div>
               <a
-                href={a.url}
+                href={article.url}
                 target="_blank"
                 rel="noreferrer"
                 className="underline underline-offset-2 break-all"
               >
-                {a.url}
+                {article.url}
               </a>
             </div>
             <div>
@@ -140,25 +165,16 @@ export default function ArticleDetailDialog({ article, onClose }: Props) {
           {/* Entidades */}
           <div className="mt-4">
             <div className="font-medium mb-1">Entidades</div>
-
-            {hasNormalized ? (
+            {!hasEntities ? (
+              <div className="text-xs text-muted-foreground">Sin entidades asociadas.</div>
+            ) : (
               <div className="flex flex-wrap gap-2">
-                {entities.map((e) => (
-                  <Badge key={e.id ?? `${e.type}-${e.name}`}>
+                {entitiesToShow.map((e) => (
+                  <Badge key={e.id}>
                     {e.type}: {e.name}
                   </Badge>
                 ))}
               </div>
-            ) : hasRaw ? (
-              <div className="flex flex-wrap gap-2">
-                {rawEntities.map((e, idx) => (
-                  <Badge key={`${e.label ?? 'ENT'}-${idx}`}>
-                    {e.label ?? 'ENT'}: {e.text ?? e.name}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <div className="text-xs text-muted-foreground">Sin entidades asociadas.</div>
             )}
           </div>
         </div>

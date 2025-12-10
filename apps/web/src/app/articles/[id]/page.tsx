@@ -28,7 +28,6 @@ export default async function ArticleDetailPage({ params }: { params: { id: stri
 
       {article.image && (
         <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={article.image} alt="" className="max-h-96 w-full rounded object-cover" />
         </div>
       )}

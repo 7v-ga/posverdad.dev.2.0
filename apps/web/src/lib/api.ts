@@ -57,10 +57,8 @@ export interface ArticleSummary {
   polarity?: number | null
   subjectivity?: number | null
   language?: string | null
-  // longitud en caracteres calculada por el backend
+  // longitud calculada por el backend
   len_chars?: number | null
-  // datos NLP crudos
-  preprocessed_data?: any | null
 }
 
 export interface ArticleDetail extends ArticleSummary {
@@ -84,10 +82,10 @@ export async function listArticles(params: {
   date_to?: string
   limit?: number
   offset?: number
-}) {
+}): Promise<ArticleSummary[]> {
   return get<ArticleSummary[]>('/articles/', params)
 }
 
-export async function getArticle(id: number) {
+export async function getArticle(id: number): Promise<ArticleDetail> {
   return get<ArticleDetail>(`/articles/${id}`)
 }

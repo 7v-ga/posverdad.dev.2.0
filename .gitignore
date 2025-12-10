@@ -1,98 +1,114 @@
-cat > .gitignore <<'EOF'
-# === Python / Virtualenv ===
-__pycache__/
-*.py[cod]
-*$py.class
-*.pyd
-*.pyo
-*.so
-*.egg-info/
-.eggs/
-dist/
-build/
-pip-wheel-metadata/
-pip-log.txt
-.venv/
-venv/
-ENV/
-env/
+#############################
+# Global ignores (monorepo)
+#############################
 
-# === Jupyter / IPython ===
-.ipynb_checkpoints/
-*.ipynb~
-# (no ignoramos *.ipynb para permitir versionar notebooks)
-
-# === Logs y temporales ===
-*.log
-logs/
-*.tmp
-*.swp
-*.swo
-.tmp/
-tmp/
-.DS_Store
-Thumbs.db
-.last_run
-last_run
-
-# === Data / Outputs ===
-outputs/
-reports/
-graph/
-graphs/
-exports/
-.cache/
-htmlcov/
-htmlcov-*/
-htmlcov-stanza/
-.coverage
-.coverage.*
-coverage.xml
-
-# === Caches / QA ===
-.mypy_cache/
-.pytest_cache/
-.tox/
-.ruff_cache/
-
-# === Configuración / Entornos ===
-.env
-.env.local
-.env.*.local
-.envrc
-.direnv/
-
-# === VSCode / IDE ===
-.vscode/
-.idea/
-*.code-workspace
-
-# === Docker (overrides locales / artefactos) ===
-docker-compose.override.yml
-.docker/
-*.pid
-*.sock
-
-# Por si alguien creó un archivo con este nombre raro
-__pycache__.pyc
-
-# === Node / Next / Turborepo ===
+# Node / Next.js / Turbo
 node_modules/
-.pnpm-store/
-.pnpm-debug.log
+.pnp/
+.pnp.js
 .next/
+.next-turbo/
 .turbo/
 dist/
+build/
 out/
-coverage/
-apps/*/node_modules/
-apps/*/.next/
 
-.lefthook/
+# Environment files
+.env
+.env.*
+!.env.example
 
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+turbo.log
+*.log
 
-# ESLint/TS build info
-.eslintcache
-**/*.tsbuildinfo
-apps/*/.eslintcache
-apps/*/tsconfig.tsbuildinfo
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+###########################################
+# Frontend (apps/web)
+###########################################
+
+apps/web/.next/
+apps/web/.turbo/
+apps/web/.eslintcache
+apps/web/node_modules/
+apps/web/tsconfig.tsbuildinfo
+apps/web/build/
+apps/web/out/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+###########################################
+# Backend (apps/api — Python/FastAPI)
+###########################################
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# MyPy / Pyright / Lint caches
+.mypy_cache/
+.pyrightcache/
+.pytest_cache/
+
+# Python packaging
+*.egg-info/
+*.egg
+build/
+dist/
+
+###########################################
+# Scraper (scrapy_project)
+###########################################
+
+scrapy_project/.scrapy/
+scrapy_project/.cache/
+scrapy_project/__pycache__/
+scrapy_project/logs/
+scrapy_project/output/
+
+###########################################
+# Database / Local state
+###########################################
+
+# Local DB dumps
+*.sqlite3
+*.db
+
+# Temporary export files
+*.csv
+*.tmp
+
+###########################################
+# Project-specific generated files
+###########################################
+
+# Artefactos generados por el pipeline NLP
+logs/
+*.log
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+###########################################
+# Allowlist: things we DO want to commit
+###########################################
+!.gitkeep
