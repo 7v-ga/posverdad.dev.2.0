@@ -1,7 +1,7 @@
 # apps/api/schemas.py
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -40,6 +40,18 @@ class ArticleSummary(BaseModel):
     polarity: Optional[float] = None
     subjectivity: Optional[float] = None
     language: Optional[str] = None
+
+    # 🔢 Longitud del cuerpo (calculada en backend a partir de Article.body)
+    len_chars: Optional[int] = Field(
+        default=None,
+        description="Longitud en caracteres del cuerpo del artículo.",
+    )
+
+    # 🧠 Datos preprocesados (JSON crudo: entidades, framing, etc.)
+    preprocessed_data: dict[str, Any] | None = Field(
+        default=None,
+        description="Datos preprocesados del artículo (por ejemplo, entidades crudas).",
+    )
 
     source: Optional[SourceOut] = Field(
         default=None,

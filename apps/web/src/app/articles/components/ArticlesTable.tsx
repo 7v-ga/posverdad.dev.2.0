@@ -107,8 +107,10 @@ export default function ArticlesTable() {
 
       if (filters.sources.length && !filters.sources.includes(sourceLabel)) return false
 
-      if (filters.lenMin != null && a.len_chars < filters.lenMin) return false
-      if (filters.lenMax != null && a.len_chars > filters.lenMax) return false
+      if (filters.lenMin != null && a.len_chars != null && a.len_chars < filters.lenMin)
+        return false
+      if (filters.lenMax != null && a.len_chars != null && a.len_chars > filters.lenMax)
+        return false
       if (filters.polMin != null && pol < filters.polMin) return false
       if (filters.polMax != null && pol > filters.polMax) return false
       if (filters.subMin != null && sub < filters.subMin) return false
@@ -168,20 +170,32 @@ export default function ArticlesTable() {
         accessorKey: 'len_chars',
         header: 'Longitud',
         cell: (ctx) => {
-          const value = ctx.getValue() as number | null | undefined
+          const raw = ctx.getValue() as number | null | undefined
           const row = ctx.row.original as any
 
-          // Si viene calculada desde el backend
-          if (typeof value === 'number' && value > 0) {
-            return value.toString()
+          let len: number | null = null
+
+          // 1) len_chars desde el backend (cualquier número >= 0)
+          if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) {
+            len = raw
+          }
+          // 2) Fallback: si el backend devolviera el body en el listado
+          else if (row && typeof row.body === 'string' && row.body.length > 0) {
+            len = row.body.length
+          }
+          // 3) Fallback extra: si en algún momento guardamos body_len en preprocessed_data
+          else if (
+            row &&
+            row.preprocessed_data &&
+            typeof row.preprocessed_data === 'object' &&
+            typeof (row.preprocessed_data as any).body_len === 'number' &&
+            Number.isFinite((row.preprocessed_data as any).body_len) &&
+            (row.preprocessed_data as any).body_len >= 0
+          ) {
+            len = (row.preprocessed_data as any).body_len
           }
 
-          // Fallback: si el backend devuelve el body del artículo, usamos su length
-          if (row && typeof row.body === 'string' && row.body.length > 0) {
-            return row.body.length.toString()
-          }
-
-          return '—'
+          return typeof len === 'number' ? String(len) : '—'
         },
       },
       { accessorKey: 'polarity', header: 'Polaridad' },

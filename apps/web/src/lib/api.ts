@@ -57,6 +57,10 @@ export interface ArticleSummary {
   polarity?: number | null
   subjectivity?: number | null
   language?: string | null
+  // longitud en caracteres calculada por el backend
+  len_chars?: number | null
+  // datos NLP crudos
+  preprocessed_data?: any | null
 }
 
 export interface ArticleDetail extends ArticleSummary {

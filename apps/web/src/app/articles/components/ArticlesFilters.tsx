@@ -1,3 +1,5 @@
+// apps/web/src/app/articles/components/ArticleFilters.tsx
+
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
@@ -11,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { useArticlesStore } from '@/store/articles-store'
+import type { Article } from '@/lib/schemas'
 
 export default function ArticlesFilters() {
   const { items, filters, setFilters, clearFilters } = useArticlesStore()
@@ -45,30 +48,20 @@ export default function ArticlesFilters() {
     filters.subMax,
   ])
 
-  // 🔧 Normalizar fuente a string (name/domain/id/JSON) para usarla como key y valor de filtro
+  // 🔧 Normalizar fuente a string (name/domain/id) para usarla como key y valor de filtro
   const sources = useMemo(() => {
-    const normalized = items
-      .map((i: any) => {
-        const s = i?.source
+    const normalized = (items as Article[])
+      .map((i) => {
+        const s = i.source
         if (s == null) return null
 
-        if (typeof s === 'string' || typeof s === 'number') {
-          return String(s)
+        if (typeof s === 'string') {
+          return s
         }
 
-        if (typeof s === 'object') {
-          if (typeof s.name === 'string') return s.name
-          if (typeof s.domain === 'string') return s.domain
-          if (s.id != null) return String(s.id)
-          // fallback defensivo
-          try {
-            return JSON.stringify(s)
-          } catch {
-            return String(s)
-          }
-        }
-
-        return String(s)
+        if (typeof s.name === 'string') return s.name
+        if (typeof s.domain === 'string') return s.domain
+        return String(s.id)
       })
       .filter((v): v is string => !!v)
 

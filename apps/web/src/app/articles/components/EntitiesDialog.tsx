@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,30 +15,33 @@ type EntitiesDialogProps = {
 export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogProps) {
   const sel = useArticlesStore((s) => s.selection)
 
+  const updateEntity = useArticlesStore((s) => s.updateEntity)
+  const addAlias = useArticlesStore((s) => s.addAlias)
+  const removeAlias = useArticlesStore((s) => s.removeAlias)
+
   const normalizedEntities = sel?.entities ?? []
 
-  // Entidades crudas desde preprocessed_data.entities (si el backend las expone)
-  const rawJsonEntities = (sel as any)?.preprocessed_data?.entities ?? []
+  const rawJsonEntities: any[] =
+    sel &&
+    (sel as any).preprocessed_data &&
+    typeof (sel as any).preprocessed_data === 'object' &&
+    Array.isArray((sel as any).preprocessed_data.entities)
+      ? (sel as any).preprocessed_data.entities
+      : []
 
   const hasNormalized = normalizedEntities.length > 0
   const hasRaw = rawJsonEntities.length > 0
 
-  const [local, setLocal] = useState(normalizedEntities)
-
-  // Estos métodos pueden llamarse distinto en tu store.
-  // Usamos `as any` para no pelear con TypeScript si la forma exacta difiere.
-  const updateEntity = useArticlesStore((s) => (s as any).updateEntity)
-  const addAlias = useArticlesStore((s) => (s as any).addAlias)
-  const removeAlias = useArticlesStore((s) => (s as any).removeAlias)
-
   // aliasInputs por entidad (key = entity.id)
   const [aliasInputs, setAliasInputs] = useState<Record<string, string>>({})
 
+  // Resetear inputs cuando cambia de artículo
+  useEffect(() => {
+    setAliasInputs({})
+  }, [sel?.id])
+
   // Si no hay artículo seleccionado, no mostramos nada
   if (!sel) return null
-
-  // Entities defensivo: si por alguna razón no viene `entities`, usamos []
-  const entities: any[] = ((sel as any).entities ?? []) as any[]
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen)
@@ -52,14 +55,11 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
         </DialogHeader>
 
         <div className="space-y-4">
-          {entities.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Este artículo no tiene entidades asociadas.
-            </p>
-          ) : (
-            entities.map((e) => {
+          {/* Entidades normalizadas (editables) */}
+          {hasNormalized ? (
+            normalizedEntities.map((e) => {
               const aliasValue = aliasInputs[String(e.id)] ?? ''
-              const aliases: string[] = (e.aliases ?? []) as string[]
+              const aliases: string[] = e.aliases ?? []
 
               return (
                 <div key={e.id} className="border rounded-md p-3">
@@ -70,8 +70,7 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
                       <Checkbox
                         checked={!!e.blocked}
                         onCheckedChange={(v) => {
-                          if (!updateEntity) return
-                          updateEntity((sel as any).id, e.id, { blocked: !!v })
+                          updateEntity(sel.id, e.id, { blocked: !!v })
                         }}
                       />
                       Bloqueada
@@ -85,15 +84,13 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
                         aliases.map((a) => (
                           <span key={a} className="px-2 py-1 text-xs bg-muted rounded">
                             {a}
-                            {removeAlias && (
-                              <button
-                                type="button"
-                                className="ml-2 text-muted-foreground hover:text-foreground"
-                                onClick={() => removeAlias((sel as any).id, e.id, a)}
-                              >
-                                ×
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              className="ml-2 text-muted-foreground hover:text-foreground"
+                              onClick={() => removeAlias(sel.id, e.id, a)}
+                            >
+                              ×
+                            </button>
                           </span>
                         ))
                       ) : (
@@ -118,8 +115,8 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
                         type="button"
                         onClick={() => {
                           const trimmed = aliasValue.trim()
-                          if (!trimmed || !addAlias) return
-                          addAlias((sel as any).id, e.id, trimmed)
+                          if (!trimmed) return
+                          addAlias(sel.id, e.id, trimmed)
                           setAliasInputs((prev) => ({
                             ...prev,
                             [String(e.id)]: '',
@@ -133,6 +130,32 @@ export default function EntitiesDialog({ open, onOpenChange }: EntitiesDialogPro
                 </div>
               )
             })
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Este artículo no tiene entidades normalizadas asociadas.
+            </p>
+          )}
+
+          {/* Entidades crudas desde preprocessed_data.entities (solo lectura) */}
+          {hasRaw && !hasNormalized && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Entidades crudas (solo lectura)</div>
+              <div className="text-xs text-muted-foreground">
+                Estas entidades provienen de <code>preprocessed_data.entities</code> y aún no están
+                vinculadas al sistema de edición.
+              </div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {rawJsonEntities.map((e, idx) => (
+                  <span
+                    key={`${e.label ?? 'ENT'}-${idx}`}
+                    className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
+                  >
+                    <span className="mr-1 font-semibold">{e.label ?? 'ENT'}</span>
+                    <span>{e.text ?? e.name}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </DialogContent>

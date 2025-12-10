@@ -1,4 +1,5 @@
 # apps/api/routers/articles.py
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -30,10 +31,17 @@ def list_articles(
 ):
     """
     Listado paginado de artículos con filtros básicos.
+    Incluye:
+      - source (join simple)
+      - entities normalizadas (N:M)
+      - preprocessed_data (JSONB crudo)
     """
     query = (
         db.query(models.Article)
-        .options(joinedload(models.Article.source))
+        .options(
+            joinedload(models.Article.source),
+            joinedload(models.Article.entities),
+        )
     )
 
     # Filtro de búsqueda simple en título/cuerpo
@@ -56,12 +64,11 @@ def list_articles(
     if filters.date_to:
         query = query.filter(models.Article.publication_date <= filters.date_to)
 
-    # Filtro por entidad: PENDIENTE de implementación completa
-    # (requiere models para articles_entities/entities y join)
-    # if filters.entity_id:
-    #     query = query.join(
-    #         models.ArticleEntity, models.Article.id == models.ArticleEntity.article_id
-    #     ).filter(models.ArticleEntity.entity_id == filters.entity_id)
+    # Filtro por entidad (normalizada)
+    if filters.entity_id:
+        query = query.join(
+            models.Article.entities
+        ).filter(models.Entity.id == filters.entity_id)
 
     query = (
         query.order_by(models.Article.scraped_at.desc().nullslast())
@@ -84,10 +91,17 @@ def get_article(
 ):
     """
     Detalle de un artículo por ID.
+    Incluye:
+      - source
+      - entities normalizadas
+      - preprocessed_data
     """
     article = (
         db.query(models.Article)
-        .options(joinedload(models.Article.source))
+        .options(
+            joinedload(models.Article.source),
+            joinedload(models.Article.entities),
+        )
         .filter(models.Article.id == article_id)
         .first()
     )

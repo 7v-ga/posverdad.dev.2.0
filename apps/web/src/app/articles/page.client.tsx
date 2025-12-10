@@ -1,147 +1,120 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import type { Route } from 'next'
-
+import { useEffect, useState } from 'react'
 import { useArticlesStore } from '@/store/articles-store'
-import type { ArticlesResponse } from '@/lib/schemas'
-import { fromQS, toQS } from '@/lib/querystring'
-import { Skeleton } from '@/components/ui/skeleton'
-import ArticlesTable from './components/ArticlesTable'
+import { listArticles } from '@/lib/api'
+import { useDebounced } from '@/lib/use-debounce'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { ArticleSchema, type Article } from '@/lib/schemas'
 import ArticlesFilters from './components/ArticlesFilters'
-
-// Se resuelve en build/hydration. Si cambias .env.local, reinicia `pnpm dev`.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
+import ArticlesTable from './components/ArticlesTable'
 
 export default function ArticlesPageClient() {
-  const { setItems, filters, setFilters } = useArticlesStore()
+  const { items, total, loading, filters, setFilters, setItems, setLoading } = useArticlesStore()
 
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const router = useRouter()
+  // Campo de búsqueda local, sincronizado con filters.q
+  const [search, setSearch] = useState<string>(filters.q)
+  const debouncedSearch = useDebounced(search, 400)
 
-  // 1) Hidratar filtros desde la URL en el primer render
+  // Mantener filters.q alineado con el input debounced
   useEffect(() => {
-    const sp = new URLSearchParams(searchParams.toString())
-    const qs = fromQS(sp)
+    if (filters.q !== debouncedSearch) {
+      setFilters({ q: debouncedSearch })
+    }
+  }, [debouncedSearch, filters.q, setFilters])
 
-    setFilters({
-      q: qs.str('q'),
-      sources: qs.arr('source'),
-      dateFrom: qs.iso('from'),
-      dateTo: qs.iso('to'),
-      lenMin: qs.num('lenMin') ?? undefined,
-      lenMax: qs.num('lenMax') ?? undefined,
-      polMin: qs.num('polMin') ?? undefined,
-      polMax: qs.num('polMax') ?? undefined,
-      subMin: qs.num('subMin') ?? undefined,
-      subMax: qs.num('subMax') ?? undefined,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // 2) Reflejar cambios de filtros en la URL (qs) sin recargar
+  // Carga de artículos desde la API
   useEffect(() => {
-    const qs = toQS({
-      q: filters.q,
-      source: filters.sources,
-      from: filters.dateFrom ?? undefined,
-      to: filters.dateTo ?? undefined,
-      lenMin: filters.lenMin ?? undefined,
-      lenMax: filters.lenMax ?? undefined,
-      polMin: filters.polMin ?? undefined,
-      polMax: filters.polMax ?? undefined,
-      subMin: filters.subMin ?? undefined,
-      subMax: filters.subMax ?? undefined,
-    })
-
-    const href = (qs ? `${pathname}${qs}` : pathname) as Route
-    router.replace(href, { scroll: false })
-  }, [filters, pathname, router])
-
-  // 3) Cargar datos desde FastAPI siempre al montar
-  useEffect(() => {
-    let mounted = true
+    let cancelled = false
 
     async function load() {
-      setIsLoading(true)
+      setLoading(true)
       setError(null)
-
       try {
-        if (!API_BASE) {
-          throw new Error(
-            'NEXT_PUBLIC_API_BASE_URL no está definida (revisa apps/web/.env.local y reinicia `pnpm dev`).',
-          )
-        }
-
-        const url = new URL('/articles/', API_BASE)
-        url.searchParams.set('limit', '500') // ajusta el límite si quieres
-
-        const res = await fetch(url.toString(), {
-          method: 'GET',
-          cache: 'no-store',
+        const data = await listArticles({
+          q: debouncedSearch || undefined,
+          // Fechas: si tu backend las soporta, las pasamos tal cual (ISO)
+          date_from: filters.dateFrom ?? undefined,
+          date_to: filters.dateTo ?? undefined,
+          // De momento traemos un "batch" completo y paginamos en cliente
+          limit: 500,
+          offset: 0,
         })
 
-        if (!res.ok) {
-          throw new Error(`Error ${res.status} al cargar artículos (HTTP ${res.status})`)
-        }
+        if (cancelled) return
 
-        // FastAPI devuelve lista simple -> adaptamos al tipo de items
-        const raw = (await res.json()) as unknown as ArticlesResponse['items']
-        if (!mounted) return
+        const parsed: Article[] = data.map((item) =>
+          ArticleSchema.parse({
+            // spread primero para conservar cualquier campo extra
+            ...item,
+            // y luego normalizamos los que nos interesan
+            id: item.id,
+            title: item.title,
+            url: item.url,
+            source: item.source ?? item.domain ?? '',
+            published_at: item.published_at ?? item.publication_date ?? item.scraped_at ?? null,
+          }),
+        )
 
-        const total = Array.isArray(raw) ? raw.length : 0
-        setItems(raw ?? [], total)
-      } catch (e: any) {
-        console.error('Error cargando artículos desde API:', e)
-        if (mounted) {
-          setError(e?.message ?? 'No se pudieron cargar los artículos desde la API')
-        }
+        setItems(parsed, parsed.length)
+      } catch (e) {
+        if (cancelled) return
+        console.error(e)
+        setError(e instanceof Error ? e.message : 'Error al cargar artículos')
+        setItems([], 0)
       } finally {
-        if (mounted) {
-          setIsLoading(false)
+        if (!cancelled) {
+          setLoading(false)
         }
       }
     }
 
-    void load()
+    load()
 
     return () => {
-      mounted = false
+      cancelled = true
     }
-  }, [setItems])
+  }, [debouncedSearch, filters.dateFrom, filters.dateTo, setItems, setLoading])
 
-  const content = useMemo(() => {
-    if (isLoading) {
-      return <Skeleton className="h-64 w-full" data-slot="skeleton" />
-    }
-
-    if (error) {
-      return (
-        <div className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-          <p className="font-semibold">Error al cargar artículos</p>
-          <p className="mt-1 whitespace-pre-line">{error}</p>
+  return (
+    <div className="space-y-4">
+      {/* Header / resumen */}
+      <Card className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Artículos</h1>
+          <p className="text-sm text-muted-foreground">
+            Exploración de artículos analizados por Posverdad.
+          </p>
         </div>
-      )
-    }
-
-    return (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <aside className="lg:col-span-3">
-          <div className="sticky top-4 space-y-4">
-            <ArticlesFilters />
+        <div className="flex flex-col gap-2 items-stretch md:items-end">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Total cargado</span>
+            <Badge variant="secondary">{total}</Badge>
           </div>
-        </aside>
-        <section className="lg:col-span-9">
-          <ArticlesTable />
-        </section>
-      </div>
-    )
-  }, [isLoading, error])
+          <Input
+            className="w-full md:w-64"
+            placeholder="Buscar por título o URL…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </Card>
 
-  return content
+      {/* Filtros */}
+      <ArticlesFilters />
+
+      {/* Estado de error / loading */}
+      {error && <div className="text-sm text-red-600">Error al cargar artículos: {error}</div>}
+      {loading && !items.length && (
+        <div className="text-sm text-muted-foreground">Cargando artículos…</div>
+      )}
+
+      {/* Tabla principal */}
+      <ArticlesTable />
+    </div>
+  )
 }

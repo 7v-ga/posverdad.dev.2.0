@@ -1,11 +1,12 @@
-// src/lib/schemas.ts
+// apps/web/src/lib/schemas.ts
 import { z } from 'zod'
 
 /* =========================
  * Entidades detectadas
  * ========================= */
 export const EntitySchema = z.object({
-  id: z.string(),
+  // La API puede devolver id numérico; aquí lo normalizamos a string
+  id: z.union([z.string(), z.number()]).transform((v) => String(v)),
   name: z.string(),
   type: z
     .enum(['PERSON', 'ORG', 'LOC', 'GPE', 'EVENT', 'WORK_OF_ART', 'PRODUCT', 'OTHER'])
@@ -16,19 +17,65 @@ export const EntitySchema = z.object({
 export type Entity = z.infer<typeof EntitySchema>
 
 /* =========================
- * Artículo
+ * Fuente (API o string normalizada)
  * ========================= */
-export const ArticleSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  url: z.string().url(),
-  source: z.string(),
-  published_at: z.string().datetime(),
-  len_chars: z.number().int().nonnegative(),
-  polarity: z.number().gte(-1).lte(1),
-  subjectivity: z.number().gte(0).lte(1),
-  entities: z.array(EntitySchema).default([]),
+export const SourceSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  domain: z.string().nullable().optional(),
 })
+export type Source = z.infer<typeof SourceSchema>
+
+/* Helper fecha flexible -> ISO string o null */
+const DateTimeFlexible = z
+  .union([z.string().datetime(), z.string(), z.null()])
+  .transform((value) => {
+    if (!value) return null
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return null
+    return d.toISOString()
+  })
+
+/* =========================
+ * Artículo (tipo usado en el FE)
+ * ========================= */
+export const ArticleSchema = z
+  .object({
+    // La API usa id numérico; en el FE lo normalizamos a string
+    id: z.union([z.string(), z.number()]).transform((v) => String(v)),
+    title: z.string(),
+    url: z.string().url(),
+
+    // Puede venir ya normalizada como string o como objeto SourceOut
+    source: z.union([z.string(), SourceSchema]),
+
+    // Fecha principal que usa la UI (normalizada a ISO o null)
+    published_at: DateTimeFlexible,
+
+    // Longitud:
+    // - La API puede devolver number, null o no mandarla.
+    // - En el FE la normalizamos siempre a number (>= 0), usando 0 como "sin dato".
+    len_chars: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional()
+      .transform((v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0)),
+
+    // Pueden ser null/undefined si la API no los calcula para todos
+    polarity: z.number().gte(-1).lte(1).nullable().optional(),
+    subjectivity: z.number().gte(0).lte(1).nullable().optional(),
+
+    // Entidades ya normalizadas
+    entities: z.array(EntitySchema).default([]),
+
+    // Body del artículo (solo detalle; útil como fallback para len_chars)
+    body: z.string().optional(),
+  })
+  // MUY IMPORTANTE: no perder campos extra como preprocessed_data
+  .passthrough()
+
 export type Article = z.infer<typeof ArticleSchema>
 
 /* =========================
@@ -44,8 +91,6 @@ export type ArticlesResponse = z.infer<typeof ArticlesResponseSchema>
  * Filtros (UI)
  * =========================
  * Nota: usamos `null` para "sin valor" porque en la UI comprobamos con `!= null`.
- * Esto encaja bien con:
- *   if (filters.lenMin != null) { ... }
  */
 export const FiltersSchema = z.object({
   q: z.string().default(''),
