@@ -1,9 +1,14 @@
 # apps/api/schemas.py
 
 from datetime import date, datetime
-from typing import Optional, Any
+from typing import Optional, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+MentionStatus = Literal["PENDING", "APPROVED", "REJECTED"]
+DecisionScope = Literal["UNDECIDED", "GLOBAL", "ARTICLE_ONLY"]
+ApplyScope = Literal["GLOBAL", "ARTICLE_ONLY", "SELECTION"]
 
 
 # ==========================
@@ -96,3 +101,60 @@ class ArticleFilters(BaseModel):
     date_to: Optional[date] = Field(default=None)
 
     model_config = ConfigDict(extra="forbid")
+
+class EntityOut(BaseModel):
+    id: int
+    name: str
+    type: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class EntityMentionOut(BaseModel):
+    id: int
+    article_id: int
+    raw_text: str
+    raw_label: Optional[str] = None
+    canonical_entity_id: Optional[int] = None
+    canonical_entity: Optional[EntityOut] = None
+    status: MentionStatus
+    decision_scope: DecisionScope
+    note: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class EntityMentionUpdate(BaseModel):
+    status: Optional[MentionStatus] = None
+    decision_scope: Optional[DecisionScope] = None
+    canonical_entity_id: Optional[int] = None
+    note: Optional[str] = None
+    reviewed_by: Optional[str] = None
+
+class MentionListResponse(BaseModel):
+    items: list[EntityMentionOut]
+    total: int
+
+class MentionListFilters(BaseModel):
+    q: Optional[str] = None
+    status: Optional[MentionStatus] = "PENDING"
+    raw_label: Optional[str] = None
+    source_id: Optional[int] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    model_config = ConfigDict(extra="forbid")
+
+class ActionSimulateRequest(BaseModel):
+    action_type: Literal["MAP_TO_CANONICAL"]
+    scope: ApplyScope
+    canonical_entity_id: int
+    match_raw_text: str
+    match_raw_label: Optional[str] = None
+
+class ActionSimulateResponse(BaseModel):
+    mentions_affected: int
+    articles_affected: int
+    sample_article_ids: list[int]
+
+class ActionApplyRequest(ActionSimulateRequest):
+    # Para SELECTION: ids explícitos
+    mention_ids: Optional[list[int]] = None
+    created_by: Optional[str] = None
+    note: Optional[str] = None

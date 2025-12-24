@@ -1,181 +1,174 @@
 # =============================================================================
 # Makefile — Posverdad (raíz)
 # =============================================================================
-# Uso:
-#   make help
-#   make reset-all              # DROP+CREATE schema + seed (obligatorio)
-#   make dev-up / make dev-down # docker compose up/down
-#   make seed                   # aplicar seed (db-seed)
-#   make web-dev                # levantar Next.js en apps/web
-#   make web-doctor             # chequeos rápidos de apps/web
+# Convención:
+#   - Python: uv + venv local (.venv)
+#   - DB: docker compose (servicio: db)
+#   - Migraciones: alembic (fuente de verdad del esquema)
+#   - Web: pnpm -C apps/web
 # =============================================================================
 
 SHELL := /bin/bash
 MAKEFLAGS += --no-builtin-rules --no-print-directory
 
-# Proyecto (opcional)
-PROJECT         ?= posverdad
-PYTHON          ?= python3
-PNPM            ?= pnpm
+# -----------------------------
+# Paths / tooling
+# -----------------------------
+ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+VENV_DIR := $(ROOT_DIR)/.venv
 
-# Rutas y archivos clave
-SCHEMA_FILE     ?= db/schema.sql
-SEED_FILE       ?= db/seed_entities_aux.sql
-INIT_DB_SCRIPT  ?= db/init_db.py
+PY := $(VENV_DIR)/bin/python
+UV := uv
 
-# Frontend (nuevo layout)
-WEB_DIR         ?= apps/web
-WEB_ENV         ?= $(WEB_DIR)/.env.local
-WEB_TSCONFIG    ?= $(WEB_DIR)/tsconfig.json
-WEB_NEXTCONF    ?= $(WEB_DIR)/next.config.ts
+PNPM := pnpm
+WEB_DIR := apps/web
 
-# =============================================================================
-# Includes (layout modular en makefiles/*.mk)
-# =============================================================================
--include makefiles/env.mk
--include makefiles/util.mk
--include makefiles/db.mk
--include makefiles/nlp.mk
--include makefiles/scrape.mk
--include makefiles/report.mk
--include makefiles/notify.mk
--include makefiles/test.mk
--include makefiles/reconcile.mk
+COMPOSE := docker compose
+DB_SERVICE := db
+DB_CONTAINER := posverdad-db-1
 
-# =============================================================================
-# Ayuda
-# =============================================================================
-.DEFAULT_GOAL := help
+# Alembic
+ALEMBIC := $(VENV_DIR)/bin/alembic
 
+# -----------------------------
+# Pytest
+# -----------------------------
+PYTEST := $(VENV_DIR)/bin/pytest
+# Permite: make test PYTEST_ARGS="..."
+PYTEST_ARGS ?=
+# Si NO_COV=1, forzamos --no-cov (útil para desarrollo local)
+ifeq ($(NO_COV),1)
+  PYTEST_ARGS := --no-cov $(PYTEST_ARGS)
+endif
+
+# -----------------------------
+# Helpers
+# -----------------------------
 .PHONY: help
-help: ## Mostrar esta ayuda
+help:
 	@echo ""
-	@echo "🧭  $(PROJECT) — Targets disponibles"
-	@echo "------------------------------------------------------------"
-	@grep -h -E '^[[:alnum:]_./-]+:.*##' $(MAKEFILE_LIST) 2>/dev/null \
-	| awk 'BEGIN {FS = ":.*##"; OFS = ""} {printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2}'
+	@echo "Targets:"
+	@echo "  make py-install          Instala deps Python (requirements-dev.in) en .venv via uv"
+	@echo "  make py-install-prod     Instala deps Python (requirements.in) en .venv via uv"
+	@echo "  make py-freeze           Muestra paquetes instalados"
 	@echo ""
-	@echo "Sugerencias:"
-	@echo "  • make reset-all                 (reset esquema + seed)"
-	@echo "  • make dev-up / dev-down         (docker compose)"
-	@echo "  • make web-dev                   (Next.js en apps/web)"
-	@echo "  • make web-doctor                (chequeos rápidos frontend)"
-	@echo "  • make doctor                    (estado/conexión DB)"
+	@echo "  make db-up               Levanta DB (docker compose up -d db)"
+	@echo "  make db-down             Baja servicios"
+	@echo "  make db-reset            Baja con -v y sube DB limpia (volúmenes nuevos)"
+	@echo "  make db-wait             Espera a que DB esté lista"
+	@echo ""
+	@echo "  make migrate             Aplica alembic upgrade head"
+	@echo "  make migrate-current     Muestra alembic current"
+	@echo "  make migrate-revision    Crea revision autogenerate (usa MSG=...)"
+	@echo ""
+	@echo "  make seed                Ejecuta db/init_db.py (si existe) contra DB actual"
+	@echo "  make reset-all           db-reset + migrate + seed"
+	@echo ""
+	@echo "  make api-dev             Levanta FastAPI (uvicorn apps.api.main:app --reload)"
+	@echo "  make web-dev             Levanta Next.js (pnpm -C apps/web dev)"
+	@echo "  make web-lint            Lint en apps/web"
+	@echo "  make web-typecheck       Typecheck en apps/web"
+	@echo ""
+	@echo "  make test                Ejecuta pytest (respeta PYTEST_ARGS / NO_COV=1)"
+	@echo "  make test-nocov          Ejecuta pytest con --no-cov"
+	@echo ""
+	@echo "  make scrape              Ejecuta scrapy crawl (SPIDER=..., COUNT=...)"
 	@echo ""
 
-# =============================================================================
-# Orquestación top-level
-# =============================================================================
+# -----------------------------
+# Python / env
+# -----------------------------
+.PHONY: py-install py-install-prod py-freeze
+py-install:
+	@$(UV) venv $(VENV_DIR) >/dev/null 2>&1 || true
+	@$(UV) pip install -r requirements-dev.in
 
-.PHONY: reset-all
-reset-all: compose-reset db-up init-db-reset db-seed ## Reset DB (DROP+CREATE), aplica schema y seed (obligatorio)
-	@echo "✅ Reset completo: schema + seed"
+py-install-prod:
+	@$(UV) venv $(VENV_DIR) >/dev/null 2>&1 || true
+	@$(UV) pip install -r requirements.in
 
-.PHONY: seed
-seed: db-seed ## Aplicar únicamente el seed (db-seed)
+py-freeze:
+	@$(PY) -m pip freeze | sort
 
-.PHONY: dev-up
-dev-up: compose-up ## Levantar stack de desarrollo con docker compose
+# -----------------------------
+# DB (Docker)
+# -----------------------------
+.PHONY: db-up db-down db-reset db-wait
+db-up:
+	@$(COMPOSE) up -d $(DB_SERVICE)
 
-.PHONY: dev-down
-dev-down: compose-down ## Bajar stack de desarrollo con docker compose
+db-down:
+	@$(COMPOSE) down
 
-.PHONY: doctor
-doctor: status-db ## Ver estado y conexión de la base de datos
+db-reset:
+	@$(COMPOSE) down -v
+	@$(COMPOSE) up -d $(DB_SERVICE)
+	@$(MAKE) db-wait
 
-# =============================================================================
-# Backend (apps/api) — utilidades
-# =============================================================================
+db-wait:
+	@echo "⏳ Esperando Postgres..."
+	@until docker exec $(DB_CONTAINER) pg_isready -U posverdad -d posverdad >/dev/null 2>&1; do 	  sleep 1; 	done
+	@echo "✅ Postgres listo"
 
-.PHONY: api-dev
-api-dev:  ## Levantar FastAPI en modo desarrollo
-	@$(PYTHON) -m uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
+# -----------------------------
+# Alembic (migraciones)
+# -----------------------------
+.PHONY: migrate migrate-current migrate-revision
+migrate:
+	@$(ALEMBIC) upgrade head
 
-# =============================================================================
-# Frontend (apps/web) — utilidades
-# =============================================================================
+migrate-current:
+	@$(ALEMBIC) current
 
-.PHONY: web-install
-web-install: ## Instalar dependencias del frontend (apps/web)
-	@$(PNPM) -C $(WEB_DIR) install
+# Uso: make migrate-revision MSG="init"
+migrate-revision:
+	@if [ -z "$(MSG)" ]; then 	  echo "❌ Debes pasar MSG. Ej: make migrate-revision MSG="init""; 	  exit 1; 	fi
+	@$(ALEMBIC) revision --autogenerate -m "$(MSG)"
 
-.PHONY: web-dev
-web-dev: ## Levantar Next.js (apps/web)
+# -----------------------------
+# Seed / reset full
+# -----------------------------
+.PHONY: seed reset-all
+seed:
+	@if [ -f "db/init_db.py" ]; then 	  $(PY) db/init_db.py; 	else 	  echo "⚠️  No existe db/init_db.py (seed omitido)"; 	fi
+
+reset-all: db-reset migrate seed
+	@echo "✅ reset-all completado"
+
+# -----------------------------
+# API / Web
+# -----------------------------
+.PHONY: api-dev web-dev web-lint web-typecheck
+api-dev:
+	@$(VENV_DIR)/bin/uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
+
+web-dev:
 	@$(PNPM) -C $(WEB_DIR) dev
 
-.PHONY: web-build
-web-build: ## Build de producción (apps/web)
-	@$(PNPM) -C $(WEB_DIR) build
-
-.PHONY: web-start
-web-start: ## Servir build de producción (apps/web)
-	@$(PNPM) -C $(WEB_DIR) start
-
-.PHONY: web-typecheck
-web-typecheck: ## Typecheck TypeScript (apps/web)
-	@$(PNPM) -C $(WEB_DIR) typecheck
-
-.PHONY: web-lint
-web-lint: ## Lint frontend (apps/web)
+web-lint:
 	@$(PNPM) -C $(WEB_DIR) lint
 
-.PHONY: web-format
-web-format: ## Formatear código (apps/web)
-	@$(PNPM) -C $(WEB_DIR) format
+web-typecheck:
+	@$(PNPM) -C $(WEB_DIR) typecheck
 
-# =============================================================================
-# Sanity checks
-# =============================================================================
+# -----------------------------
+# Tests
+# -----------------------------
+.PHONY: test test-nocov
+test:
+	@command -v $(PYTEST) >/dev/null 2>&1 || ( 	  echo "❌ pytest no está instalado en .venv. Ejecuta: make py-install"; 	  exit 1 	)
+	@$(PYTEST) $(PYTEST_ARGS)
 
-.PHONY: check-paths
-check-paths: ## Verificar paths críticos (schema/seed/init y web dir)
-	@test -f "$(SCHEMA_FILE)" || (echo "❌ No existe $(SCHEMA_FILE)"; exit 1)
-	@test -f "$(SEED_FILE)"   || (echo "❌ No existe $(SEED_FILE)"; exit 1)
-	@test -f "$(INIT_DB_SCRIPT)" || (echo "❌ No existe $(INIT_DB_SCRIPT)"; exit 1)
-	@test -d "$(WEB_DIR)"     || (echo "❌ No existe $(WEB_DIR)"; exit 1)
-	@echo "✅ Paths OK:"
-	@echo "   - SCHEMA_FILE:     $(SCHEMA_FILE)"
-	@echo "   - SEED_FILE:       $(SEED_FILE)"
-	@echo "   - INIT_DB_SCRIPT:  $(INIT_DB_SCRIPT)"
-	@echo "   - WEB_DIR:         $(WEB_DIR)"
+test-nocov:
+	@$(MAKE) test NO_COV=1
 
-# =============================================================================
-# Web doctor — chequeos rápidos de apps/web
-# =============================================================================
-
-.PHONY: web-doctor
-web-doctor: ## Chequeos de entorno FE (env, lockfile duplicado, tsconfig, typecheck)
-	@echo "🔎 web-doctor: Revisando $(WEB_DIR)"
-	@if [ ! -d "$(WEB_DIR)" ]; then echo "❌ No existe $(WEB_DIR)"; exit 1; fi
-	@if [ -f "$(WEB_DIR)/pnpm-lock.yaml" ]; then \
-	  echo "❌ Lockfile duplicado en $(WEB_DIR)/pnpm-lock.yaml. Usa el lockfile de la raíz."; \
-	  exit 1; \
-	else \
-	  echo "✅ Sin lockfile duplicado en apps/web"; \
-	fi
-	@if [ ! -f "$(WEB_ENV)" ]; then \
-	  echo "⚠️  Falta $(WEB_ENV). Crea uno con:"; \
-	  echo "    NEXT_PUBLIC_API_BASE_URL=http://localhost:8000"; \
-	  echo "    NEXT_PUBLIC_FEATURE_BULK=1"; \
-	else \
-	  echo "✅ $(WEB_ENV) encontrado"; \
-	fi
-	@if [ ! -f "$(WEB_TSCONFIG)" ]; then \
-	  echo "❌ Falta $(WEB_TSCONFIG)"; exit 1; \
-	fi
-	@if ! grep -q '"types"' "$(WEB_TSCONFIG)"; then \
-	  echo "⚠️  tsconfig.json no declara \"types\". Añade \"types\": [\"node\"] en compilerOptions."; \
-	else \
-	  if grep -q '"types":[^]]*node' "$(WEB_TSCONFIG)"; then \
-	    echo "✅ tsconfig.json incluye types: node"; \
-	  else \
-	    echo "⚠️  tsconfig.json no incluye types: node. Añade \"types\": [\"node\"]"; \
-	  fi; \
-	fi
-	@if [ -f "$(WEB_NEXTCONF)" ]; then \
-	  echo "✅ next.config.ts encontrado"; \
-	else \
-	  echo "⚠️  Falta next.config.ts (usando defaults de Next)"; \
-	fi
-	@echo "🧪 Typecheck..."
-	@$(PNPM) -C $(WEB_DIR) typecheck && echo "✅ Typecheck OK" || (echo "❌ Typecheck falló"; exit 1)
+# -----------------------------
+# Scrapy
+# -----------------------------
+# Uso:
+#   make scrape SPIDER=el_mostrador COUNT=5
+# COUNT es opcional; si se define usa CLOSESPIDER_ITEMCOUNT.
+.PHONY: scrape
+scrape:
+	@if [ -z "$(SPIDER)" ]; then 	  echo "❌ Debes pasar SPIDER. Ej: make scrape SPIDER=el_mostrador COUNT=5"; 	  exit 1; 	fi
+	@if [ -n "$(COUNT)" ]; then 	  $(VENV_DIR)/bin/scrapy crawl $(SPIDER) -s CLOSESPIDER_ITEMCOUNT=$(COUNT); 	else 	  $(VENV_DIR)/bin/scrapy crawl $(SPIDER); 	fi

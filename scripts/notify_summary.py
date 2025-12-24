@@ -1,444 +1,386 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""
+scripts/notify_summary.py
+
+Resumen del último scraping y notificación a Slack.
+
+Este archivo fue adaptado para la base nueva gestionada por Alembic y psycopg3:
+- Ya NO depende de la tabla `nlp_runs` ni de la vista `v_run_summary`.
+- Construye el resumen a partir de las tablas actuales:
+  articles, sources, entities, entity_mentions (si existe y tiene datos).
+
+Compatibilidad:
+- Si `articles` tiene columna `run_id`, filtra por run_id cuando se entrega --run-id.
+- Si NO existe `run_id`, usa una ventana temporal (por defecto últimas 24h) o el último día con datos.
+"""
+
+from __future__ import annotations
 
 import os
-import json
 import time
+import json
+from dataclasses import dataclass
+from typing import Any, Optional, Sequence, Tuple, List, Dict
+
 import requests
-import pandas as pd
-from textwrap import shorten
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine, Row
 
-import matplotlib
-matplotlib.use("Agg")  # backend sin X
-import matplotlib.pyplot as plt
+# Opcional: gráficos
+try:
+    import matplotlib.pyplot as plt
+except Exception:  # pragma: no cover
+    plt = None  # type: ignore
 
-# ========= ENV =========
-DATABASE_URL          = os.getenv("DATABASE_URL", "postgresql+psycopg://posverdad:posverdad@localhost:5432/posverdad")
-SLACK_TOKEN           = os.getenv("SLACK_BOT_TOKEN", "").strip()
-SLACK_USER_TOKEN      = os.getenv("SLACK_USER_TOKEN", "").strip()
-SLACK_CHANNEL         = os.getenv("SLACK_CHANNEL", "").strip()
-SLACK_CHANNEL_IS_ID   = os.getenv("SLACK_CHANNEL_IS_ID", "1") == "1"
-VERBOSE               = os.getenv("VERBOSE", "1") == "1"
 
-# ========= SQL =========
-def _get_engine():
-    return create_engine(DATABASE_URL, future=True)
+# =========================
+# Config
+# =========================
 
-def resolve_run_id(engine, run_id: str | None):
+SLACK_TOKEN = os.getenv("SLACK_TOKEN", "").strip()
+SLACK_CHANNEL = os.getenv("SLACK_CHANNEL", "").strip()
+VERBOSE = os.getenv("VERBOSE", "0").strip() in ("1", "true", "True", "yes", "YES")
+
+# Ventana fallback cuando no hay run_id (en horas)
+DEFAULT_WINDOW_HOURS = int(os.getenv("SUMMARY_WINDOW_HOURS", "24"))
+
+
+def db_url() -> str:
     """
-    Si run_id viene vacío/None, intenta usar LAST_RUN_ID o el último en nlp_runs.
+    Prioridad:
+    - DATABASE_URL
+    - POSTGRES_URL
     """
-    if run_id and run_id.strip():
-        return run_id.strip()
+    url = (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or "").strip()
+    if not url:
+        raise RuntimeError("DATABASE_URL/POSTGRES_URL no está configurado.")
+    return url
 
-    rid_env = os.getenv("LAST_RUN_ID", "").strip()
-    if rid_env:
-        return rid_env
 
-    with engine.connect() as conn:
-        q = text("""
-          SELECT run_id
-          FROM nlp_runs
-          WHERE run_id IS NOT NULL
-          ORDER BY COALESCE(started_at, date) DESC NULLS LAST
-          LIMIT 1
-        """)
-        row = conn.execute(q).first()
-        return row[0] if row else None
+def make_engine() -> Engine:
+    return create_engine(db_url(), pool_pre_ping=True, future=True)
 
-# ========= SLACK HELPER =========
-def slack_api(method: str, *, params=None, data=None, json=None, timeout=30):
-    """
-    Llamada genérica a Slack Web API: https://slack.com/api/{method}
-    Acepta params (query), data (form-encoded) o json (body).
-    """
-    url = f"https://slack.com/api/{method}"
+
+# =========================
+# Slack helpers
+# =========================
+
+SLACK_API_BASE = "https://slack.com/api"
+
+
+def slack_api(method: str, *, json_payload: Optional[dict] = None, data: Optional[dict] = None, files: Optional[dict] = None):
     headers = {"Authorization": f"Bearer {SLACK_TOKEN}"}
-    try:
-        if json is not None:
-            headers["Content-Type"] = "application/json; charset=utf-8"
-            r = requests.post(url, headers=headers, json=json, timeout=timeout)
-        elif data is not None:
-            r = requests.post(url, headers=headers, data=data, timeout=timeout)
+    url = f"{SLACK_API_BASE}/{method}"
+    return requests.post(url, headers=headers, json=json_payload, data=data, files=files, timeout=30)
+
+
+def slack_enabled() -> bool:
+    return bool(SLACK_TOKEN and SLACK_CHANNEL)
+
+
+def get_file_permalink_with_retry(file_id: str, tries: int = 6, sleep_s: float = 1.0) -> Optional[str]:
+    for i in range(tries):
+        r = slack_api("files.info", json_payload={"file": file_id})
+        if r.ok:
+            j = r.json()
+            if j.get("ok") and j.get("file", {}).get("permalink"):
+                return j["file"]["permalink"]
+        time.sleep(sleep_s * (i + 1))
+    return None
+
+
+# =========================
+# Introspection helpers
+# =========================
+
+def has_table(engine: Engine, table: str, schema: str = "public") -> bool:
+    q = text("""
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = :schema AND table_name = :table
+        LIMIT 1
+    """)
+    with engine.connect() as cx:
+        return cx.execute(q, {"schema": schema, "table": table}).first() is not None
+
+
+def has_column(engine: Engine, table: str, column: str, schema: str = "public") -> bool:
+    q = text("""
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = :schema AND table_name = :table AND column_name = :col
+        LIMIT 1
+    """)
+    with engine.connect() as cx:
+        return cx.execute(q, {"schema": schema, "table": table, "col": column}).first() is not None
+
+
+# =========================
+# Queries
+# =========================
+
+@dataclass
+class Summary:
+    run_id: Optional[str]
+    window_hours: int
+    articles_total: int
+    sources_top: List[Tuple[str, int]]
+    by_day: List[Tuple[str, int]]
+    entities_top: List[Tuple[str, str, int]]  # (name, type, count)
+
+
+def resolve_window(engine: Engine, run_id: Optional[str]) -> Tuple[Optional[str], int]:
+    """
+    Si existe articles.run_id y viene run_id -> usar run_id.
+    Si no, usar ventana por horas.
+    """
+    if run_id and has_column(engine, "articles", "run_id"):
+        return run_id, 0
+    return None, DEFAULT_WINDOW_HOURS
+
+
+def fetch_summary(engine: Engine, run_id: Optional[str]) -> Summary:
+    run_id_resolved, window_h = resolve_window(engine, run_id)
+
+    where_parts = []
+    params: Dict[str, Any] = {}
+
+    if run_id_resolved:
+        where_parts.append("a.run_id = :run_id")
+        params["run_id"] = run_id_resolved
+    else:
+        # Preferimos scraped_at si existe, de lo contrario published_at, y si nada existe, no filtramos.
+        if has_column(engine, "articles", "scraped_at"):
+            where_parts.append("a.scraped_at >= (NOW() - (:window_h || ' hours')::interval)")
+            params["window_h"] = window_h
+        elif has_column(engine, "articles", "created_at"):
+            where_parts.append("a.created_at >= (NOW() - (:window_h || ' hours')::interval)")
+            params["window_h"] = window_h
+        elif has_column(engine, "articles", "published_at"):
+            where_parts.append("a.published_at >= (NOW() - (:window_h || ' hours')::interval)")
+            params["window_h"] = window_h
+
+    where_sql = ("WHERE " + " AND ".join(where_parts)) if where_parts else ""
+
+    q_total = text(f"SELECT COUNT(*) AS n FROM articles a {where_sql}")
+
+    q_sources = text(f"""
+        SELECT COALESCE(s.name, '—') AS source, COUNT(*) AS n
+        FROM articles a
+        LEFT JOIN sources s ON s.id = a.source_id
+        {where_sql}
+        GROUP BY 1
+        ORDER BY n DESC
+        LIMIT 12
+    """)
+
+    # Serie por día usando scraped_at si existe, si no published_at
+    date_col = "a.scraped_at" if has_column(engine, "articles", "scraped_at") else "a.published_at"
+    q_by_day = text(f"""
+        SELECT TO_CHAR(DATE_TRUNC('day', {date_col}), 'YYYY-MM-DD') AS day, COUNT(*) AS n
+        FROM articles a
+        {where_sql}
+        GROUP BY 1
+        ORDER BY 1 ASC
+        LIMIT 31
+    """)
+
+    # Entidades: preferimos entity_mentions (normalizado).
+    entities_top: List[Tuple[str, str, int]] = []
+    if has_table(engine, "entity_mentions") and has_table(engine, "entities"):
+        # Si existe run_id en mentions, filtramos por run_id; si no, por join con artículos (si existe article_id)
+        if run_id_resolved and has_column(engine, "entity_mentions", "run_id"):
+            q_entities = text("""
+                SELECT e.name, e.type, COUNT(*) AS n
+                FROM entity_mentions em
+                JOIN entities e ON e.id = em.entity_id
+                WHERE em.run_id = :run_id
+                GROUP BY 1,2
+                ORDER BY n DESC
+                LIMIT 20
+            """)
+            params_entities = {"run_id": run_id_resolved}
+        elif has_column(engine, "entity_mentions", "article_id"):
+            q_entities = text(f"""
+                SELECT e.name, e.type, COUNT(*) AS n
+                FROM entity_mentions em
+                JOIN entities e ON e.id = em.entity_id
+                JOIN articles a ON a.id = em.article_id
+                {where_sql}
+                GROUP BY 1,2
+                ORDER BY n DESC
+                LIMIT 20
+            """)
+            params_entities = params
         else:
-            r = requests.get(url, headers=headers, params=params, timeout=timeout)
-        return r
-    except Exception as e:
-        class Dummy:
-            ok = False
-            def json(self):
-                return {"ok": False, "error": str(e)}
-            text = str(e)
-        return Dummy()
+            q_entities = None
+            params_entities = {}
+        if q_entities is not None:
+            with engine.connect() as cx:
+                rows = cx.execute(q_entities, params_entities).fetchall()
+                entities_top = [(str(r[0]), str(r[1]), int(r[2])) for r in rows]
 
-def slack_token_is_valid() -> bool:
-    if not SLACK_TOKEN:
-        return False
-    r = slack_api("auth.test")
-    ok = r.ok and r.json().get("ok")
-    if VERBOSE:
-        j = r.json() if r.ok else {}
-        print(f"[SLACK] auth.test ok={ok} team={j.get('team')} user_id={j.get('user_id')} url={j.get('url')}")
-    return ok
+    with engine.connect() as cx:
+        total = int(cx.execute(q_total, params).scalar() or 0)
+        sources = [(str(r[0]), int(r[1])) for r in cx.execute(q_sources, params).fetchall()]
+        by_day = [(str(r[0]), int(r[1])) for r in cx.execute(q_by_day, params).fetchall()]
 
-def slack_resolve_channel_id(name_or_id: str) -> str | None:
-    """
-    Si empieza con C/G asumimos ID y lo devolvemos.
-    Si no, busca por nombre con conversations.list (channels:read / groups:read).
-    """
-    if not name_or_id:
+    return Summary(
+        run_id=run_id_resolved,
+        window_hours=window_h,
+        articles_total=total,
+        sources_top=sources,
+        by_day=by_day,
+        entities_top=entities_top,
+    )
+
+
+# =========================
+# Plotting
+# =========================
+
+def plot_bar(title: str, labels: Sequence[str], values: Sequence[int], out_path: str) -> Optional[str]:
+    if plt is None:
         return None
-    s = name_or_id.strip()
-    if s.startswith(("C", "G")) and len(s) >= 9:
-        return s
+    if not labels:
+        return None
 
-    next_cursor = None
-    for _ in range(4):
-        params = {
-            "exclude_archived": "true",
-            "limit": 200,
-            "types": "public_channel,private_channel",
-        }
-        if next_cursor:
-            params["cursor"] = next_cursor
-        r = slack_api("conversations.list", params=params)
-        if not (r.ok and r.json().get("ok")):
-            break
-        chans = r.json().get("channels", [])
-        for c in chans:
-            if c.get("name") == s:
-                return c.get("id")
-        next_cursor = r.json().get("response_metadata", {}).get("next_cursor")
-        if not next_cursor:
-            break
-    return None
+    plt.figure(figsize=(10, 4.5))
+    plt.bar(range(len(labels)), list(values))
+    plt.xticks(range(len(labels)), list(labels), rotation=45, ha="right")
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160)
+    plt.close()
+    return out_path
 
-def slack_ensure_join(channel_id: str):
-    r = slack_api("conversations.join", json={"channel": channel_id})
-    if VERBOSE:
-        if r.ok and r.json().get("ok"):
-            print("[SLACK] conversations.join ok=True error=None")
-        else:
-            print(f"[SLACK] conversations.join ok=False error={r.json().get('error')}")
 
-def slack_channel_info(channel_id: str):
-    r = slack_api("conversations.info", params={"channel": channel_id})
-    if VERBOSE:
-        ok = r.ok and r.json().get("ok")
-        ch = r.json().get("channel") if ok else None
-        is_priv = None if not ch else ch.get("is_private")
-        print(f"[SLACK] conversations.info ok={ok} channel={ch and ch.get('name')} is_private={is_priv}")
-
-def upload_image(path, title, channel_id: str) -> dict:
+def slack_upload_image(path: str, title: str) -> Optional[str]:
     """
-    Sube imagen con flujo EXTERNO:
-      1) files.getUploadURLExternal
-      2) PUT binario
-      3) files.completeUploadExternal (publica el archivo en el canal)
-    Retorna {ok: bool, file_id: str|None}
+    Sube imagen a Slack usando files.uploadV2 (y devuelve permalink cuando sea posible).
     """
-    if not SLACK_TOKEN:
-        print("❌ SLACK_BOT_TOKEN ausente")
-        return {"ok": False, "file_id": None}
-    if not channel_id:
-        print("❌ channel_id requerido para subir imágenes")
-        return {"ok": False, "file_id": None}
-    if not slack_token_is_valid():
-        print("❌ Token Slack inválido (auth.test falló)")
-        return {"ok": False, "file_id": None}
+    if not slack_enabled():
+        return None
 
+    # 1) get upload URL
+    r1 = slack_api("files.getUploadURLExternal", data={"filename": os.path.basename(path), "length": os.path.getsize(path)})
+    if not r1.ok:
+        return None
+    j1 = r1.json()
+    if not j1.get("ok"):
+        return None
+
+    upload_url = j1["upload_url"]
+    file_id = j1["file_id"]
+
+    # 2) upload bytes to that URL
+    with open(path, "rb") as f:
+        r2 = requests.post(upload_url, data=f.read(), timeout=60)
+        if not r2.ok:
+            return None
+
+    # 3) complete upload
+    r3 = slack_api(
+        "files.completeUploadExternal",
+        json_payload={
+            "files": [{"id": file_id, "title": title}],
+            "channel_id": SLACK_CHANNEL,
+            "initial_comment": title,
+        },
+    )
+    if not r3.ok:
+        return None
+    j3 = r3.json()
+    if not j3.get("ok"):
+        return None
+
+    return get_file_permalink_with_retry(file_id)
+
+
+# =========================
+# Rendering (Slack Blocks)
+# =========================
+
+def build_blocks(summary: Summary) -> List[dict]:
+    title = "Resumen de scraping"
+    subtitle = f"Run: {summary.run_id}" if summary.run_id else f"Ventana: últimas {summary.window_hours}h"
+
+    lines = [f"*Total artículos:* {summary.articles_total}"]
+    if summary.sources_top:
+        lines.append("\n*Top fuentes:*")
+        for s, n in summary.sources_top[:8]:
+            lines.append(f"• {s}: {n}")
+
+    if summary.entities_top:
+        lines.append("\n*Top entidades (mentions):*")
+        for name, typ, n in summary.entities_top[:10]:
+            lines.append(f"• {name} ({typ}): {n}")
+    else:
+        lines.append("\n_Nota: no hay entity_mentions (aún) o no se registraron menciones normalizadas._")
+
+    body = "\n".join(lines)
+
+    blocks = [
+        {"type": "header", "text": {"type": "plain_text", "text": title}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": subtitle}},
+        {"type": "divider"},
+        {"type": "section", "text": {"type": "mrkdwn", "text": body}},
+    ]
+    return blocks
+
+
+def notify_summary(run_id: Optional[str] = None) -> None:
     try:
-        size = os.path.getsize(path)
-        filename = os.path.basename(path)
-        meta = {
-            "filename": filename,
-            "length": str(size),           # string
-            "alt_text": title or filename,
-        }
-        # 1) URL de subida
-        r1 = slack_api("files.getUploadURLExternal", data=meta)
-        j1 = r1.json() if (r1.ok and "json" in r1.headers.get("content-type","")) else {}
-        if not (r1.ok and j1.get("ok")):
-            err = j1.get("error")
-            print(f"⚠️ files.getUploadURLExternal falló: {r1.text}")
-            if err in {"unknown_method", "method_deprecated"}:
-                print("ℹ️ Tu workspace/token no soporta getUploadURLExternal. No se enviarán imágenes.")
-            return {"ok": False, "file_id": None}
+        engine = make_engine()
+        summary = fetch_summary(engine, run_id)
 
-        upload_url = j1["upload_url"]
-        file_id = j1["file_id"]
+        blocks = build_blocks(summary)
 
-        # 2) PUT binario
-        with open(path, "rb") as f:
-            r2 = requests.put(upload_url, data=f, headers={"Content-Type": "application/octet-stream"}, timeout=60)
-        if not (200 <= r2.status_code < 300):
-            print(f"❌ PUT binario falló: HTTP {r2.status_code} {r2.text}")
-            return {"ok": False, "file_id": None}
+        # Charts (optional)
+        img_links: List[str] = []
+        if plt is not None:
+            os.makedirs("tmp", exist_ok=True)
 
-        # 3) Completar y publicar en canal
-        r3 = slack_api("files.completeUploadExternal", data={
-            "files": json.dumps([{"id": file_id, "title": title or filename}]),
-            "channel_id": channel_id,
-            "initial_comment": title or filename,
-        })
-        j3 = r3.json() if (r3.ok and "json" in r3.headers.get("content-type","")) else {}
-        if not (r3.ok and j3.get("ok")):
-            print(f"❌ files.completeUploadExternal falló: {r3.text}")
-            return {"ok": False, "file_id": None}
+            if summary.by_day:
+                labels = [d for d, _ in summary.by_day]
+                values = [n for _, n in summary.by_day]
+                p1 = plot_bar("Artículos por día", labels, values, "tmp/articles_by_day.png")
+                if p1:
+                    link = slack_upload_image(p1, "Gráfico: Artículos por día")
+                    if link:
+                        img_links.append(f"• <{link}|Artículos por día>")
 
-        print(f"✅ Imagen subida al canal: {title or filename} → {channel_id} (file_id={file_id})")
-        return {"ok": True, "file_id": file_id}
+            if summary.entities_top:
+                labels = [f"{n}" for n, _, _ in summary.entities_top[:12]]
+                values = [c for _, _, c in summary.entities_top[:12]]
+                p2 = plot_bar("Top entidades (mentions)", labels, values, "tmp/top_entities.png")
+                if p2:
+                    link = slack_upload_image(p2, "Gráfico: Top entidades")
+                    if link:
+                        img_links.append(f"• <{link}|Top entidades>")
 
-    except Exception as e:
-        print(f"❌ Error al subir imagen: {e}")
-        return {"ok": False, "file_id": None}
+        if img_links:
+            blocks.append({"type": "divider"})
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*Gráficos*\n" + "\n".join(img_links)}})
 
-def get_file_permalink_with_retry(file_id: str, retries: int = 5, delay: float = 0.8) -> str | None:
-    """
-    Obtiene el permalink (autenticado) con reintentos.
-    Requiere 'files:read'. Devuelve None si no disponible.
-    """
-    for i in range(retries):
-        r = slack_api("files.info", params={"file": file_id})
-        if r.ok and r.json().get("ok"):
-            return r.json().get("file", {}).get("permalink")
-        # file_not_found o aún no indexado
-        time.sleep(delay)
-    if VERBOSE:
-        print(f"⚠️ files.info falló tras {retries} intentos")
-    return None
-
-# ========= LÓGICA DE NOTIFICACIÓN =========
-def notify_summary(run_id: str | None):
-    engine = _get_engine()
-    rid = resolve_run_id(engine, run_id)
-
-    if not rid:
-        print("⚠️ No se encontró el run_id.")
-        return
-
-    try:
-        # Consultas
-        q_sum  = text("SELECT * FROM v_run_summary WHERE run_id = :rid")
-        q_src  = text("SELECT * FROM v_run_top_sources WHERE run_id = :rid ORDER BY articles DESC")
-        q_ent  = text("SELECT * FROM v_run_entities_top WHERE run_id = :rid ORDER BY mentions DESC")
-        q_bins = text("SELECT * FROM v_run_sentiment_bins WHERE run_id = :rid ORDER BY metric, bucket")
-        q_top  = text("SELECT * FROM v_run_top_articles WHERE run_id = :rid ORDER BY score DESC, len_chars DESC")
-
-        df_sum  = pd.read_sql(q_sum,  engine, params={"rid": rid})
-        df_src  = pd.read_sql(q_src,  engine, params={"rid": rid})
-        df_ent  = pd.read_sql(q_ent,  engine, params={"rid": rid})
-        df_bins = pd.read_sql(q_bins, engine, params={"rid": rid})
-        df_top  = pd.read_sql(q_top,  engine, params={"rid": rid})
-
-        if df_sum.empty:
-            print("⚠️ No hay datos en v_run_summary para ese run_id. ¿Ejecutaste el pipeline?")
-            return
-
-        s = df_sum.iloc[0].to_dict()
-        dur = int(s.get("duration_seconds") or 0)
-        if dur < 3600:
-            dur_fmt = f"{dur//60:02d}:{dur%60:02d}"
-        else:
-            dur_fmt = f"{int(dur//3600)}:{int((dur%3600)//60):02d}:{int(dur%60):02d}"
-
-        # Top fuentes (máx 5)
-        top_sources_lines = [f"• {r['source_name']}: {int(r['articles'])}" for _, r in df_src.head(5).iterrows()]
-        top_sources_text = "\n".join(top_sources_lines) if top_sources_lines else "—"
-
-        # Top entidades (máx 10)
-        top_entities_lines = [f"• {r['entity_name']} ({r['entity_type']}): {int(r['mentions'])}" for _, r in df_ent.head(10).iterrows()]
-        top_entities_text = "\n".join(top_entities_lines) if top_entities_lines else "—"
-
-        # Top artículos (máx 5)
-        top_articles_lines = []
-        for _, r in df_top.head(5).iterrows():
-            title = r.get("title") or "(sin título)"
-            url   = r.get("url") or ""
-            title_short = shorten(title, width=120, placeholder="…")
-            top_articles_lines.append(f"• <{url}|{title_short}>" if url else f"• {title_short}")
-        top_articles_text = "\n".join(top_articles_lines) if top_articles_lines else "—"
-
-        # Buckets: polarity
-        pol = df_bins[df_bins["metric"] == "polarity"]
-        pol_order = ["very_negative","negative","neutral","positive","very_positive","unknown"]
-        pol_counts = {b: 0 for b in pol_order}
-        for _, r in pol.iterrows():
-            pol_counts[str(r["bucket"])] = int(r["n"])
-        pol_line = " | ".join([f"{k}:{v}" for k,v in pol_counts.items()])
-
-        # KPIs (≤10 fields por sección)
-        kpi_fields_part1 = [
-            {"type": "mrkdwn", "text": f"*Insertados:* {int(s.get('total_inserted') or 0)}"},
-            {"type": "mrkdwn", "text": f"*Descartados:* {int(s.get('total_discarded') or 0)}"},
-            {"type": "mrkdwn", "text": f"*Actualizados:* {int(s.get('total_updated') or 0)}"},
-            {"type": "mrkdwn", "text": f"*Errores:* {int(s.get('total_errors') or 0)}"},
-            {"type": "mrkdwn", "text": f"*Duración:* {dur_fmt}"},
-            {"type": "mrkdwn", "text": f"*Artículos:* {int(s.get('articles_count') or 0)}"},
-            {"type": "mrkdwn", "text": f"*Fuentes:* {int(s.get('sources_count') or 0)}"},
-            {"type": "mrkdwn", "text": f"*Items/min:* {s.get('items_per_minute') if s.get('items_per_minute') is not None else '—'}"},
-        ]
-        kpi_fields_part2 = [
-            {"type": "mrkdwn", "text": f"*Avg len (chars):* {s.get('avg_len_chars') if s.get('avg_len_chars') is not None else '—'}"},
-            {"type": "mrkdwn", "text": f"*P50 len:* {s.get('p50_len_chars') if s.get('p50_len_chars') is not None else '—'}"},
-            {"type": "mrkdwn", "text": f"*Avg polarity:* {round(float(s.get('avg_polarity')),3) if s.get('avg_polarity') is not None else '—'}"},
-            {"type": "mrkdwn", "text": f"*Avg subjectivity:* {round(float(s.get('avg_subjectivity')),3) if s.get('avg_subjectivity') is not None else '—'}"},
-        ]
-        if "discarded_duplicates" in df_sum.columns:
-            dup = s.get("discarded_duplicates")
-            kpi_fields_part2.append({"type": "mrkdwn", "text": f"*Desc. duplicados:* {int(dup) if dup is not None else '—'}"})
-        if "discarded_invalid" in df_sum.columns:
-            inv = s.get("discarded_invalid")
-            kpi_fields_part2.append({"type": "mrkdwn", "text": f"*Desc. inválidos:* {int(inv) if inv is not None else '—'}"})
-
-        blocks = [
-            {"type": "header", "text": {"type": "plain_text", "text": f"Resumen corrida {rid}", "emoji": True}},
-            {"type": "section", "fields": kpi_fields_part1},
-            {"type": "section", "fields": kpi_fields_part2},
-            {"type": "divider"},
-            {"type": "section", "text": {"type": "mrkdwn", "text": "*Top fuentes*"}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": top_sources_text}},
-            {"type": "divider"},
-            {"type": "section", "text": {"type": "mrkdwn", "text": "*Top entidades (PERSON/ORG)*"}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": top_entities_text}},
-            {"type": "divider"},
-            {"type": "section", "text": {"type": "mrkdwn", "text": "*Top artículos*"}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": top_articles_text}},
-            {"type": "context", "elements": [
-                {"type": "mrkdwn", "text": f"*Polarity buckets:* {pol_line}"}
-            ]}
-        ]
-
-        # === SLACK ===
-        if SLACK_TOKEN and SLACK_CHANNEL and slack_token_is_valid():
-            # Resolver canal
-            if SLACK_CHANNEL_IS_ID and SLACK_CHANNEL.startswith(("C","G")):
-                cid = SLACK_CHANNEL
-                if VERBOSE:
-                    print(f"[SLACK] chat.postMessage (ID-trust): canal_id={cid}")
-            else:
-                cid = slack_resolve_channel_id(SLACK_CHANNEL)
-
-            if not cid:
-                print("❌ No se pudo resolver SLACK_CHANNEL a un ID válido")
-                return
-
+        if slack_enabled():
+            r = slack_api("chat.postMessage", json_payload={"channel": SLACK_CHANNEL, "blocks": blocks, "text": "Resumen de scraping"})
+            if not (r.ok and r.json().get("ok")):
+                raise RuntimeError(f"Slack chat.postMessage falló: {r.status_code} {r.text}")
             if VERBOSE:
-                print(f"[SLACK] chat.postMessage → canal_id={cid} (origen='{SLACK_CHANNEL}')")
-                slack_channel_info(cid)
-            slack_ensure_join(cid)
-
-            # Publicar resumen
-            rmsg = slack_api("chat.postMessage", json={
-                "channel": cid,
-                "text": f"Resumen corrida {rid}",
-                "blocks": blocks,
-                "unfurl_links": False,
-                "unfurl_media": False,
-            })
-            if not (rmsg.ok and rmsg.json().get("ok")):
-                print(f"❌ Error al enviar mensaje: {rmsg.text}")
-                return
-            print("✅ Resumen enriquecido enviado a Slack")
-
-            thread_ts = rmsg.json().get("ts")
-
-            # Graficos (últimos 30 runs)
-            df_all = pd.read_sql(text("""
-                SELECT
-                    COALESCE(date::date, started_at::date) AS fecha,
-                    COALESCE(total_inserted, 0) AS total_inserted,
-                    COALESCE(
-                        duration_seconds,
-                        EXTRACT(EPOCH FROM (finished_at - started_at))::int
-                    ) AS duration_seconds
-                FROM nlp_runs
-                WHERE total_inserted IS NOT NULL
-                ORDER BY COALESCE(date, started_at) DESC NULLS LAST
-                LIMIT 30
-            """), engine)
-
-            if not df_all.empty:
-                df_all['fecha'] = pd.to_datetime(df_all['fecha'])
-                os.makedirs("graphs", exist_ok=True)
-
-                # 1) Artículos por día
-                plt.figure(figsize=(8,4))
-                plt.plot(df_all['fecha'], df_all['total_inserted'], marker='o')
-                plt.title("Artículos por día")
-                plt.xlabel("Fecha")
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                p1 = "graphs/slack_articulos_por_dia.png"
-                plt.savefig(p1, dpi=144)
-                plt.close()
-
-                up1 = upload_image(p1, "Artículos por día", channel_id=cid)
-
-                # 2) Duración por día
-                plt.figure(figsize=(8,4))
-                plt.bar(df_all['fecha'], df_all['duration_seconds'])
-                plt.title("Duración por día")
-                plt.xlabel("Fecha")
-                plt.ylabel("Segundos")
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                p2 = "graphs/slack_duracion_por_dia.png"
-                plt.savefig(p2, dpi=144)
-                plt.close()
-
-                up2 = upload_image(p2, "Duración por día", channel_id=cid)
-
-                # Publicar permalinks en hilo (si tenemos ts)
-                if thread_ts:
-                    # pequeño delay para indexación y evitar file_not_found
-                    time.sleep(1.2)
-
-                    if up1.get("ok") and up1.get("file_id"):
-                        link1 = get_file_permalink_with_retry(up1["file_id"])
-                        txt1 = "Gráfico: *Artículos por día*"
-                        if link1:
-                            txt1 += f" • <{link1}|ver imagen>"
-                        m1 = slack_api("chat.postMessage", json={
-                            "channel": cid, "thread_ts": thread_ts,
-                            "text": txt1, "unfurl_links": False, "unfurl_media": False
-                        })
-                        if m1.ok and m1.json().get("ok"):
-                            if VERBOSE:
-                                print(f"✅ Enlace de imagen publicado en hilo: Artículos por día → {cid}")
-                        else:
-                            print(f"⚠️ chat.postMessage (link 1) falló: {m1.text}")
-
-                    if up2.get("ok") and up2.get("file_id"):
-                        link2 = get_file_permalink_with_retry(up2["file_id"])
-                        txt2 = "Gráfico: *Duración por día*"
-                        if link2:
-                            txt2 += f" • <{link2}|ver imagen>"
-                        m2 = slack_api("chat.postMessage", json={
-                            "channel": cid, "thread_ts": thread_ts,
-                            "text": txt2, "unfurl_links": False, "unfurl_media": False
-                        })
-                        if m2.ok and m2.json().get("ok"):
-                            if VERBOSE:
-                                print(f"✅ Enlace de imagen publicado en hilo: Duración por día → {cid}")
-                        else:
-                            print(f"⚠️ chat.postMessage (link 2) falló: {m2.text}")
-                else:
-                    print("ℹ️ No hay thread_ts del mensaje de resumen; no publicaré en hilo.")
-            else:
-                print("ℹ️ No hay datos suficientes para gráficos.")
+                print("✅ Notificación enviada a Slack.")
         else:
-            print("ℹ️ Slack no configurado o token inválido. Vista previa Blocks:")
-            print(blocks)
+            print("ℹ️ Slack no configurado. Blocks preview:")
+            print(json.dumps(blocks, ensure_ascii=False, indent=2))
 
     except Exception as e:
         print(f"❌ Error en notify_summary: {e}")
 
-# ========= MAIN =========
+
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Notifica en Slack el resumen de un run_id")
-    parser.add_argument("--run-id", dest="run_id", default=None, help="Run ID (opcional). Si no, usa LAST_RUN_ID o el último.")
+
+    parser = argparse.ArgumentParser(description="Notifica en Slack un resumen del scraping.")
+    parser.add_argument("--run-id", dest="run_id", default=None, help="Run ID (opcional, si articles.run_id existe).")
     args = parser.parse_args()
     notify_summary(args.run_id)

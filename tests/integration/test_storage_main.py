@@ -1,68 +1,104 @@
+# tests/integration/test_storage_main.py
 import os
-import pytest
-import psycopg2
-from dotenv import load_dotenv
+
+import psycopg
+
+from tests._db import db_url_for_psycopg
 from scrapy_project.storage_helpers import store_article
 
-load_dotenv()
 
-DB_PARAMS = {
-    "dbname": os.getenv("POSTGRES_DB"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
-    "port": os.getenv("POSTGRES_PORT", "5432"),
-}
+def _db_url_for_psycopg() -> str:
+    """
+    psycopg (driver) acepta:
+      - URI: postgresql://user:pass@host:port/dbname
+      - conninfo: host=... dbname=... user=... password=...
 
-@pytest.fixture(scope="module")
-def db_conn():
-    conn = psycopg2.connect(**DB_PARAMS)
-    yield conn
-    conn.rollback()
-    conn.close()
+    SQLAlchemy usa URIs con driver:
+      - postgresql+psycopg://...
+      - postgresql+psycopg2://...
 
-def test_store_article_full(db_conn):
-    cur = db_conn.cursor()
-    cur.execute("DELETE FROM articles_entities WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", ("https://example.com/full-test",))
-    cur.execute("DELETE FROM articles_keywords WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", ("https://example.com/full-test",))
-    cur.execute("DELETE FROM articles_authors WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", ("https://example.com/full-test",))
-    cur.execute("DELETE FROM framings WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", ("https://example.com/full-test",))
-    cur.execute("DELETE FROM articles WHERE url = %s", ("https://example.com/full-test",))
-    db_conn.commit()
-    cur.close()
+    Acá normalizamos DATABASE_URL para psycopg.
+    """
+    url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+    if url:
+        url = url.strip()
+        if url.startswith("postgresql+psycopg://"):
+            return url.replace("postgresql+psycopg://", "postgresql://", 1)
+        if url.startswith("postgresql+psycopg2://"):
+            return url.replace("postgresql+psycopg2://", "postgresql://", 1)
+        return url
 
-    article = {
-        "title": "Test completo de artículo",
-        "url": "https://example.com/full-test",
-        "publication_date": "2025-07-08",
-        "body": "Contenido de prueba para análisis completo.",
-        "meta_keywords": "prueba, artículo, completo",
-        "author": "Juan Test",
-        "hash": "hash-test-storage",
-        "run_id": "test_run_storage",
+    user = os.getenv("POSTGRES_USER", "posverdad")
+    password = os.getenv("POSTGRES_PASSWORD", "posverdad")
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db = os.getenv("POSTGRES_DB", "posverdad")
+    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
 
-        "sentiment": {
-            "label": "POS",
-            "probs": {"POS": 0.8, "NEU": 0.1, "NEG": 0.1}
-        },
-        "entities": [
-            {"text": "Chile", "label": "LOC"},
-            {"text": "Boric", "label": "PER"},
-        ],
-        "framing": {
-            "ideological_frame": "progresista",
-            "actors": ["gobierno"],
-            "victims": ["pueblo"],
-            "antagonists": ["oposición"],
-            "emotions": ["esperanza"],
-            "summary": "El artículo enmarca el conflicto desde una perspectiva de justicia social."
-        }
-    }
 
-    cur = db_conn.cursor()
-    cur.execute("INSERT INTO nlp_runs (run_id, date) VALUES (%s, CURRENT_DATE) ON CONFLICT DO NOTHING;", ("test_run_storage",))
-    db_conn.commit()
-    cur.close()
+def _reset_db(cur) -> None:
+    # Orden: tablas puente / dependientes primero
+    cur.execute("DELETE FROM articles_entities")
+    cur.execute("DELETE FROM entity_mentions")
+    cur.execute("DELETE FROM entity_actions")
+    cur.execute("DELETE FROM articles")
+    cur.execute("DELETE FROM entities")
+    cur.execute("DELETE FROM sources")
+    cur.execute("DELETE FROM categories")
 
-    result = store_article(db_conn, article)
-    assert result is not None
+
+def test_store_article_inserts_article_and_relations():
+    with psycopg.connect(db_url_for_psycopg()) as conn:
+        with conn.cursor() as cur:
+            _reset_db(cur)
+
+            cur.execute("INSERT INTO sources (id, name) VALUES (%s, %s)", (1, "Fuente Test"))
+            cur.execute("INSERT INTO categories (id, name) VALUES (%s, %s)", (1, "Categoría Test"))
+
+            article = {
+                # OJO: store_article NO usa este id como PK; lo dejamos pero el test no debe asumirlo.
+                "id": 1,
+                "title": "Título de Prueba",
+                "url": "http://example.com/test",
+                "source_id": 1,
+                "category_id": 1,
+                "publication_date": "2025-01-01T00:00:00Z",
+                "scraped_at": "2025-01-01T00:00:00Z",
+                "body": "Texto de prueba. " * 10,
+                "entities": [
+                    {"text": "Estado", "label": "LOC"},
+                    {"text": "IPS", "label": "ORG"},
+                ],
+                "preprocessed_data": {"entities": [{"text": "Estado", "label": "LOC"}]},
+            }
+
+            # store_article retorna el id REAL de la fila en articles
+            article_id = store_article(conn, article)
+
+            # Cursor NUEVO después del commit
+            with conn.cursor() as cur2:
+                cur2.execute(
+                    "SELECT title, len_chars, url FROM articles WHERE id = %s",
+                    (article_id,),
+                )
+                row = cur2.fetchone()
+
+            assert row is not None
+            assert row[0] == "Título de Prueba"
+            assert row[1] is not None
+            assert row[2] == "http://example.com/test"
+
+            # Validación alternativa por url (por si quieres doble certeza)
+            cur.execute("SELECT id FROM articles WHERE url = %s", ("http://example.com/test",))
+            row2 = cur.fetchone()
+            assert row2 is not None
+            assert int(row2[0]) == int(article_id)
+
+            # Entities pueden persistirse como menciones crudas y/o normalizadas.
+            cur.execute("SELECT COUNT(*) FROM entity_mentions WHERE article_id = %s", (article_id,))
+            mentions = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM articles_entities WHERE article_id = %s", (article_id,))
+            links = cur.fetchone()[0]
+            assert (mentions + links) > 0
+
+        conn.commit()

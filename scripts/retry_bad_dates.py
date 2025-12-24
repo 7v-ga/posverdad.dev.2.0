@@ -18,8 +18,8 @@ import shutil
 import subprocess
 from typing import Iterable, List, Set
 
-import psycopg2
-from psycopg2 import OperationalError
+import psycopg
+from psycopg import OperationalError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,7 +94,7 @@ def url_in_db(url: str) -> bool:
     Devuelve True si la URL ya existe en articles.url
     """
     try:
-        with psycopg2.connect(**DB_PARAMS) as conn:
+        with psycopg.connect(**DB_PARAMS) as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1 FROM articles WHERE url = %s LIMIT 1;", (url,))
                 return cur.fetchone() is not None

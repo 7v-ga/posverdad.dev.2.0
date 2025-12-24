@@ -1,145 +1,204 @@
-# scripts/report_runs.py
+#!/usr/bin/env python3
+"""scripts/report_runs.py
+
+Reporte por ventana temporal (sin nlp_runs).
+
+Este script reemplaza el antiguo "report_runs.py" basado en nlp_runs y genera un
+reporte de ingesta usando scraped_at como criterio temporal.
+
+Uso (ejemplos):
+  python scripts/report_runs.py --since-hours 24
+  python scripts/report_runs.py --since "2025-12-22T00:00:00Z" --until "2025-12-23T00:00:00Z"
+  python scripts/report_runs.py --since-hours 6 --limit 15
+
+Requiere:
+  - DATABASE_URL en .env (ej: postgresql+psycopg://user:pass@localhost:5432/db)
+"""
+
+from __future__ import annotations
 
 import os
-import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
-from sqlalchemy import create_engine
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+import typer
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 from dotenv import load_dotenv
 
-# === Configuración ===
-load_dotenv()
-db_url = (
-    f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-    f"@{os.getenv('POSTGRES_HOST', 'localhost')}:{os.getenv('POSTGRES_PORT', '5432')}"
-    f"/{os.getenv('POSTGRES_DB')}"
-)
-engine = create_engine(db_url)
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="📊 Reporte de ejecuciones NLP Posverdad")
-    parser.add_argument("--desde", type=str, help="Fecha mínima (YYYY-MM-DD)")
-    parser.add_argument("--hasta", type=str, help="Fecha máxima (YYYY-MM-DD)")
-    parser.add_argument("--export", type=str, help="Ruta para exportar CSV")
-    parser.add_argument("--detalles", action="store_true", help="Mostrar columnas adicionales")
-    parser.add_argument("--nograph", action="store_true", help="No generar gráficos")
-    parser.add_argument("--diagnostico", action="store_true", help="Analizar outliers y errores")
-    parser.add_argument("--logfile", action="store_true", help="Usar logs/runs.log en vez de la base de datos")
-    return parser.parse_args()
+app = typer.Typer(add_completion=False)
 
-def cargar_runs(desde=None, hasta=None):
-    filtros = []
-    if desde:
-        filtros.append(f"date >= '{desde}'")
-    if hasta:
-        filtros.append(f"date <= '{hasta}'")
-    where = f"WHERE {' AND '.join(filtros)}" if filtros else ""
 
-    query = f"""
-        SELECT run_id, date::timestamp(0), total_inserted, total_discarded,
-               total_errors, duration_seconds
-        FROM nlp_runs
-        {where}
-        ORDER BY date DESC
-    """
-    return pd.read_sql(query, engine)
+def _parse_dt(value: str) -> datetime:
+    """Parsea ISO8601. Acepta 'Z' y strings naive (se asumen UTC)."""
+    v = value.strip()
+    if v.endswith("Z"):
+        v = v[:-1] + "+00:00"
+    dt = datetime.fromisoformat(v)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
-def cargar_runs_desde_log():
-    path = "logs/runs.log"
-    if not os.path.exists(path):
-        print("⚠️ No se encontró logs/runs.log")
-        return pd.DataFrame()
-    df = pd.read_csv(path)
-    df["date"] = pd.to_datetime(df["run_id"].str[:15], format="%Y%m%d-%H%M%S", errors="coerce")
-    df = df.dropna(subset=["date"])
-    df = df.sort_values("date", ascending=False)
-    return df
 
-def mostrar_tabla(df, detalles=False):
-    if df.empty:
-        print("⚠️ No se encontraron ejecuciones.")
-        return
-    if not detalles:
-        df = df[["run_id", "date", "insertados" if "insertados" in df.columns else "total_inserted",
-                 "errores" if "errores" in df.columns else "total_errors",
-                 "duracion_segundos" if "duracion_segundos" in df.columns else "duration_seconds"]]
-    print(df.to_markdown(index=False))
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
-def generar_graficos(df):
-    df = df.copy()
-    df["fecha"] = pd.to_datetime(df["date"])
-    df = df.sort_values("fecha")
-    os.makedirs("graphs", exist_ok=True)
 
-    y_insertados = df["insertados"] if "insertados" in df.columns else df["total_inserted"]
-    y_duracion = df["duracion_segundos"] if "duracion_segundos" in df.columns else df["duration_seconds"]
+def _get_engine() -> Engine:
+    load_dotenv()
+    url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_DSN")
+    if not url:
+        raise RuntimeError("DATABASE_URL no está configurado (revisa .env)")
+    return create_engine(url, pool_pre_ping=True, future=True)
 
-    plt.figure(figsize=(10, 4))
-    plt.plot(df["fecha"], y_insertados, marker='o')
-    plt.title("📈 Artículos insertados por ejecución")
-    plt.ylabel("Insertados")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig("graphs/runs_articulos_por_dia.png")
 
-    plt.figure(figsize=(10, 4))
-    plt.bar(df["fecha"], y_duracion)
-    plt.title("⏱ Duración de ejecución (segundos)")
-    plt.ylabel("Duración")
-    plt.xlabel("Fecha")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig("graphs/runs_duracion_por_dia.png")
+@dataclass(frozen=True)
+class Window:
+    since: datetime
+    until: datetime
 
-def diagnostico(df):
-    print("\n🔎 Diagnóstico automático de runs\n")
-    col_ins = "insertados" if "insertados" in df.columns else "total_inserted"
-    col_err = "errores" if "errores" in df.columns else "total_errors"
-    col_dur = "duracion_segundos" if "duracion_segundos" in df.columns else "duration_seconds"
 
-    vacíos = df[df[col_ins] == 0]
-    if not vacíos.empty:
-        print("❗ Runs sin artículos insertados:")
-        print(vacíos[["run_id", "date", col_err, col_dur]].to_markdown(index=False))
+def _resolve_window(
+    since: Optional[str],
+    until: Optional[str],
+    since_hours: Optional[int],
+) -> Window:
+    now = _utc_now()
+    if since_hours is not None:
+        s = now - timedelta(hours=since_hours)
+    elif since:
+        s = _parse_dt(since)
     else:
-        print("✅ No hay runs con 0 artículos insertados.")
+        # default razonable
+        s = now - timedelta(hours=24)
 
-    errores_muchos = df[df[col_err] > 50]
-    if not errores_muchos.empty:
-        print("\n⚠️ Runs con errores altos (> 50):")
-        print(errores_muchos[["run_id", "date", col_err, col_ins]].to_markdown(index=False))
+    u = _parse_dt(until) if until else now
+    if u <= s:
+        raise typer.BadParameter("'until' debe ser mayor que 'since'")
+    return Window(since=s, until=u)
 
-    dur_media = df[col_dur].mean()
-    dur_std = df[col_dur].std()
-    umbral = dur_media + 2 * dur_std
-    outliers = df[df[col_dur] > umbral]
-    if not outliers.empty:
-        print(f"\n🐢 Runs con duración inusualmente alta (> {int(umbral)}s):")
-        print(outliers[["run_id", "date", col_dur]].to_markdown(index=False))
 
-def main():
-    args = parse_args()
-    try:
-        if args.logfile:
-            df = cargar_runs_desde_log()
+def _fmt(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _print_kv(k: str, v: str) -> None:
+    typer.echo(f"{k}: {v}")
+
+
+@app.command()
+def main(
+    since: Optional[str] = typer.Option(
+        None,
+        help="Inicio de ventana en ISO8601 (UTC recomendado). Ej: 2025-12-22T00:00:00Z",
+    ),
+    until: Optional[str] = typer.Option(
+        None,
+        help="Fin de ventana en ISO8601 (por defecto: ahora UTC). Ej: 2025-12-23T00:00:00Z",
+    ),
+    since_hours: Optional[int] = typer.Option(
+        None,
+        help="Alternativa a --since: ventana relativa hacia atrás (horas)",
+        min=1,
+    ),
+    limit: int = typer.Option(10, help="Top N para tablas", min=1, max=200),
+    include_entities: bool = typer.Option(True, help="Incluye ranking de entidades normalizadas"),
+) -> None:
+    """Genera reporte de ingesta por ventana temporal."""
+    w = _resolve_window(since, until, since_hours)
+    engine = _get_engine()
+
+    typer.echo("\n=== Posverdad · Reporte por ventana ===")
+    _print_kv("Desde", _fmt(w.since))
+    _print_kv("Hasta", _fmt(w.until))
+    typer.echo("")
+
+    with engine.connect() as conn:
+        # Conteos generales
+        total = conn.execute(
+            text(
+                """
+                SELECT COUNT(*)::int
+                FROM articles
+                WHERE scraped_at >= :since AND scraped_at < :until
+                """
+            ),
+            {"since": w.since, "until": w.until},
+        ).scalar_one()
+
+        _print_kv("Artículos insertados (scraped_at en ventana)", str(total))
+
+        # Top fuentes
+        typer.echo("\n--- Top fuentes ---")
+        rows = conn.execute(
+            text(
+                """
+                SELECT COALESCE(s.name, 'Sin fuente') AS source, COUNT(*)::int AS n
+                FROM articles a
+                LEFT JOIN sources s ON s.id = a.source_id
+                WHERE a.scraped_at >= :since AND a.scraped_at < :until
+                GROUP BY 1
+                ORDER BY n DESC, source ASC
+                LIMIT :limit
+                """
+            ),
+            {"since": w.since, "until": w.until, "limit": limit},
+        ).fetchall()
+
+        if not rows:
+            typer.echo("(sin datos)")
         else:
-            df = cargar_runs(desde=args.desde, hasta=args.hasta)
+            for r in rows:
+                typer.echo(f"{r.source}: {r.n}")
 
-        mostrar_tabla(df, detalles=args.detalles)
+        # Publicación: rango de published_at dentro de ventana (informativo)
+        typer.echo("\n--- Publicación (published_at) dentro de la ventana (informativo) ---")
+        pub = conn.execute(
+            text(
+                """
+                SELECT
+                  MIN(published_at) AS min_published_at,
+                  MAX(published_at) AS max_published_at
+                FROM articles
+                WHERE scraped_at >= :since AND scraped_at < :until
+                """
+            ),
+            {"since": w.since, "until": w.until},
+        ).mappings().one()
 
-        if args.export:
-            df.to_csv(args.export, index=False)
-            print(f"\n📤 Exportado a: {args.export}")
+        _print_kv("Min published_at", str(pub["min_published_at"]) if pub["min_published_at"] else "(null)")
+        _print_kv("Max published_at", str(pub["max_published_at"]) if pub["max_published_at"] else "(null)")
 
-        if args.diagnostico:
-            diagnostico(df)
+        # Top entidades normalizadas (entities + articles_entities)
+        if include_entities:
+            typer.echo("\n--- Top entidades normalizadas ---")
+            ents = conn.execute(
+                text(
+                    """
+                    SELECT e.name, e.type, COUNT(*)::int AS mentions
+                    FROM articles a
+                    JOIN articles_entities ae ON ae.article_id = a.id
+                    JOIN entities e ON e.id = ae.entity_id
+                    WHERE a.scraped_at >= :since AND a.scraped_at < :until
+                      AND COALESCE(e.blocked, false) = false
+                    GROUP BY e.name, e.type
+                    ORDER BY mentions DESC, e.name ASC
+                    LIMIT :limit
+                    """
+                ),
+                {"since": w.since, "until": w.until, "limit": limit},
+            ).fetchall()
 
-        if not args.nograph and not df.empty:
-            generar_graficos(df)
-            print("📈 Gráficos generados en carpeta 'graphs/'")
+            if not ents:
+                typer.echo("(sin entidades normalizadas en esta ventana)")
+            else:
+                for e in ents:
+                    typer.echo(f"{e.name} [{e.type}] : {e.mentions}")
 
-    except Exception as e:
-        print(f"❌ Error en reporte: {e}")
+    typer.echo("\nOK\n")
+
 
 if __name__ == "__main__":
-    main()
+    app()

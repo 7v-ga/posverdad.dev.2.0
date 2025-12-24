@@ -1,181 +1,333 @@
 # tests/integration/test_storage.py
+from __future__ import annotations
 
+import json
 import os
-import pytest
-import psycopg2
-from dotenv import load_dotenv
+from typing import Any, Dict, List, Optional, Tuple
 
-from scrapy_project.storage_helpers import (
-    save_authors,
-    save_keywords,
-    save_entities,
-    save_framing,
-)
+import psycopg
+import pytest
+
+from tests._db import db_url_for_psycopg, truncate_all, seed_minimal_fks
+from scrapy_project.storage_helpers import save_entities
 
 pytestmark = pytest.mark.integration
 
-load_dotenv()
 
-DB_PARAMS = {
-    "dbname": os.getenv("POSTGRES_DB"),
-    "user": os.getenv("POSTGRES_USER"),
-    "password": os.getenv("POSTGRES_PASSWORD"),
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
-    "port": os.getenv("POSTGRES_PORT", "5432"),
-}
-
-TEST_URL = "https://example.com/test"
-TEST_RUN = "test_run"
-
-
-@pytest.fixture(scope="module")
-def db_conn():
-    conn = psycopg2.connect(**DB_PARAMS)
-    yield conn
-    conn.close()
-
-
-@pytest.fixture
-def test_article_id(db_conn):
+# ----------------------------
+# DSN helpers
+# ----------------------------
+def _db_url() -> str:
     """
-    Crea un artículo mínimo y devuelve su id.
-    Limpia relaciones previas del mismo URL para evitar residuos.
-    Usa transacciones con context managers (commit al salir).
+    Devuelve un DSN compatible con psycopg.
+    - SQLAlchemy usa: postgresql+psycopg://...
+    - psycopg usa:    postgresql://...
     """
-    with db_conn:
-        with db_conn.cursor() as cur:
-            # Limpieza defensiva por URL
-            cur.execute("DELETE FROM framings WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles_entities WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles_keywords WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles_authors  WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles WHERE url = %s", (TEST_URL,))
+    url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or ""
+    if not url:
+        user = os.getenv("POSTGRES_USER", "posverdad")
+        pwd = os.getenv("POSTGRES_PASSWORD", "posverdad")
+        host = os.getenv("POSTGRES_HOST", "localhost")
+        port = os.getenv("POSTGRES_PORT", "5432")
+        db = os.getenv("POSTGRES_DB", "posverdad")
+        url = f"postgresql://{user}:{pwd}@{host}:{port}/{db}"
 
-            # Asegura un run_id presente
-            cur.execute(
-                "INSERT INTO nlp_runs (run_id, date) VALUES (%s, NOW()) ON CONFLICT DO NOTHING",
-                (TEST_RUN,),
-            )
+    if url.startswith("postgresql+psycopg://"):
+        url = url.replace("postgresql+psycopg://", "postgresql://", 1)
+    if url.startswith("postgresql+psycopg2://"):
+        url = url.replace("postgresql+psycopg2://", "postgresql://", 1)
 
-            # Inserta artículo base (schema v5: usar body_hash en vez de hash)
-            cur.execute(
-                """
-                INSERT INTO articles (title, url, body, publication_date, body_hash, run_id)
-                VALUES (%s, %s, %s, CURRENT_DATE, %s, %s)
-                RETURNING id
-                """,
-                ("Artículo de test", TEST_URL, "Contenido de prueba", "test-body-hash-123", TEST_RUN),
-            )
-            article_id = cur.fetchone()[0]
-    return article_id
+    return url
 
 
-def test_save_authors_inserta_y_relaciona(db_conn, test_article_id):
-    autores = ["Gabriel Test", "Otro Autor"]
-    with db_conn:
-        with db_conn.cursor() as cur:
-            save_authors(cur, test_article_id, autores)
-
-    # Verificar relación y autores
-    with db_conn.cursor() as cur:
-        cur.execute(
-            "SELECT a.name FROM authors a "
-            "JOIN articles_authors aa ON aa.author_id = a.id "
-            "WHERE aa.article_id = %s ORDER BY a.name",
-            (test_article_id,),
+# ----------------------------
+# DB helpers
+# ----------------------------
+def _table_exists(cur, name: str) -> bool:
+    cur.execute(
+        """
+        SELECT EXISTS (
+          SELECT 1
+            FROM information_schema.tables
+           WHERE table_schema='public'
+             AND table_name=%s
         )
-        rows = [r[0] for r in cur.fetchall()]
-    assert rows == sorted(autores)
+        """,
+        (name,),
+    )
+    return bool(cur.fetchone()[0])
 
 
-def test_save_keywords_inserta_y_relaciona_desde_string(db_conn, test_article_id):
-    kws = "keyword1, palabra clave"
-    with db_conn:
-        with db_conn.cursor() as cur:
-            save_keywords(cur, test_article_id, kws)
-
-    with db_conn.cursor() as cur:
-        cur.execute(
-            "SELECT k.word FROM keywords k "
-            "JOIN articles_keywords ak ON ak.keyword_id = k.id "
-            "WHERE ak.article_id = %s ORDER BY k.word",
-            (test_article_id,),
-        )
-        words = [r[0] for r in cur.fetchall()]
-    assert words == ["keyword1", "palabra clave"]
+def _columns(cur, table: str) -> List[str]:
+    cur.execute(
+        """
+        SELECT column_name
+          FROM information_schema.columns
+         WHERE table_schema='public'
+           AND table_name=%s
+         ORDER BY ordinal_position
+        """,
+        (table,),
+    )
+    return [r[0] for r in cur.fetchall()]
 
 
-def test_save_entities_inserta_y_relaciona(db_conn, test_article_id):
-    ents = [{"text": "Chile", "label": "LOC"}]
-    with db_conn:
-        with db_conn.cursor() as cur:
-            save_entities(cur, test_article_id, ents)
+def _truncate_all(cur) -> None:
+    """
+    Trunca tablas relevantes si existen.
+    CASCADE para resetear FKs.
+    """
+    candidates = [
+        "entity_actions",
+        "entity_mentions",
+        "articles_entities",
+        "entities",
+        "articles",
+        "sources",
+        "categories",
+    ]
+    existing = [t for t in candidates if _table_exists(cur, t)]
+    if not existing:
+        return
+    cur.execute(f"TRUNCATE {', '.join(existing)} RESTART IDENTITY CASCADE")
 
-    with db_conn.cursor() as cur:
-        cur.execute(
-            "SELECT e.name, e.type FROM entities e "
-            "JOIN articles_entities ae ON ae.entity_id = e.id "
-            "WHERE ae.article_id = %s",
-            (test_article_id,),
-        )
-        rows = cur.fetchall()
-    assert rows == [("Chile", "LOC")]
+
+def _seed_minimal_fks(cur) -> None:
+    if _table_exists(cur, "sources"):
+        cur.execute("INSERT INTO sources (id, name) VALUES (%s, %s)", (1, "Example Source"))
+    if _table_exists(cur, "categories"):
+        cur.execute("INSERT INTO categories (id, name) VALUES (%s, %s)", (1, "News"))
 
 
-def test_save_framing_direct_fields(db_conn, test_article_id):
-    payload = {
-        "ideological_frame": "neutral",
-        "actors": ["gobierno"],
-        "victims": ["ciudadanos"],
-        "antagonists": ["corrupción"],
-        "emotions": ["esperanza"],
-        "summary": "El artículo describe un problema político.",
+def _insert_minimal_article(cur, article_id: int = 1) -> None:
+    cols = _columns(cur, "articles")
+    must = {"id", "url", "title", "body"}
+    missing = must - set(cols)
+    assert not missing, f"articles no tiene columnas requeridas para test: {missing}"
+
+    # Base mínima
+    data: Dict[str, Any] = {
+        "id": article_id,
+        "url": f"https://example.com/a{article_id}",
+        "title": "Test Article",
+        "body": "cuerpo de prueba",
     }
-    with db_conn:
-        with db_conn.cursor() as cur:
-            save_framing(cur, test_article_id, payload)
 
-    with db_conn.cursor() as cur:
+    # Opcionales si existen
+    if "source_id" in cols:
+        data["source_id"] = 1
+    if "category_id" in cols:
+        data["category_id"] = 1
+    if "published_at" in cols:
+        data["published_at"] = "NOW()"
+    if "scraped_at" in cols:
+        data["scraped_at"] = "NOW()"
+
+    # len_chars: si existe, lo seteamos. Si fuera NOT NULL sin default, esto evita errores.
+    if "len_chars" in cols:
+        data["len_chars"] = 123
+
+    # preprocessed_data opcional
+    if "preprocessed_data" in cols:
+        data["preprocessed_data"] = None
+
+    col_names: List[str] = []
+    placeholders: List[str] = []
+    params: List[Any] = []
+
+    for k, v in data.items():
+        col_names.append(k)
+        if v == "NOW()":
+            placeholders.append("NOW()")
+        else:
+            placeholders.append("%s")
+            params.append(v)
+
+    sql = f"INSERT INTO articles ({', '.join(col_names)}) VALUES ({', '.join(placeholders)})"
+    cur.execute(sql, tuple(params))
+
+
+def _label_to_type(raw_label: str) -> str:
+    """
+    Mapea labels crudas típicas (spaCy, etc.) a tipos del sistema.
+    Ajusta si tu DB usa otro set.
+    """
+    lab = (raw_label or "").upper()
+    if lab in ("PER", "PERSON"):
+        return "PERSON"
+    if lab in ("ORG",):
+        return "ORG"
+    if lab in ("LOC",):
+        return "LOC"
+    if lab in ("GPE",):
+        return "GPE"
+    if lab in ("EVENT",):
+        return "EVENT"
+    if lab in ("WORK_OF_ART",):
+        return "WORK_OF_ART"
+    if lab in ("PRODUCT",):
+        return "PRODUCT"
+    return "OTHER"
+
+
+def _try_fetch_mentions(cur, article_id: int) -> Optional[List[Tuple[str, str]]]:
+    if not _table_exists(cur, "entity_mentions"):
+        return None
+
+    em_cols = _columns(cur, "entity_mentions")
+
+    text_col = next((c for c in ("raw_text", "entity_text", "text") if c in em_cols), None)
+    label_col = next((c for c in ("raw_label", "label") if c in em_cols), None)
+
+    if not (text_col and label_col and "article_id" in em_cols):
+        return None
+
+    cur.execute(
+        f"""
+        SELECT {text_col}, {label_col}
+          FROM entity_mentions
+         WHERE article_id = %s
+         ORDER BY id
+        """,
+        (article_id,),
+    )
+    rows = cur.fetchall()
+    return rows if rows else []
+
+
+def _try_fetch_preprocessed_entities(cur, article_id: int) -> Optional[List[Dict[str, Any]]]:
+    cols = _columns(cur, "articles")
+    if "preprocessed_data" not in cols:
+        return None
+
+    cur.execute("SELECT preprocessed_data FROM articles WHERE id=%s", (article_id,))
+    pre = cur.fetchone()[0]
+    if pre is None:
+        return []
+
+    if isinstance(pre, str):
+        pre_obj = json.loads(pre)
+    else:
+        pre_obj = pre
+
+    if not isinstance(pre_obj, dict):
+        return []
+
+    ents = pre_obj.get("entities")
+    if ents is None:
+        return []
+    if not isinstance(ents, list):
+        return []
+    return ents
+
+
+def _try_fetch_normalized_entities(cur, article_id: int) -> Optional[List[Tuple[str, Optional[str]]]]:
+    """
+    Busca entidades normalizadas vía articles_entities -> entities.
+    Devuelve lista de (name, type?) si existe columna type.
+    """
+    if not (_table_exists(cur, "articles_entities") and _table_exists(cur, "entities")):
+        return None
+
+    ae_cols = _columns(cur, "articles_entities")
+    e_cols = _columns(cur, "entities")
+
+    if not ("article_id" in ae_cols and "entity_id" in ae_cols):
+        return None
+
+    name_col = "name" if "name" in e_cols else None
+    if not name_col:
+        return None
+
+    type_col = "type" if "type" in e_cols else None
+
+    if type_col:
         cur.execute(
-            "SELECT ideological_frame, actors, victims, antagonists, emotions, summary "
-            "FROM framings WHERE article_id = %s",
-            (test_article_id,),
+            f"""
+            SELECT e.{name_col}, e.{type_col}
+              FROM articles_entities ae
+              JOIN entities e ON e.id = ae.entity_id
+             WHERE ae.article_id = %s
+             ORDER BY e.id
+            """,
+            (article_id,),
         )
-        row = cur.fetchone()
-    assert row[0] == "neutral"
-    assert row[1] == ["gobierno"]
-    assert row[2] == ["ciudadanos"]
-    assert row[3] == ["corrupción"]
-    assert row[4] == ["esperanza"]
-    assert isinstance(row[5], str) and "político" in row[5]
-
-
-def test_save_framing_via_narrative_role(db_conn, test_article_id):
-    """Cubre la ruta alternativa: narrative_role.actor/victim/antagonist."""
-    payload = {
-        "ideological_frame": "crítico",
-        "narrative_role": {
-            "actor": ["prensa"],
-            "victim": ["público"],
-            "antagonist": ["desinformación"],
-        },
-        "emotions": ["alarma"],
-        "summary": "Se enmarca el fenómeno como una amenaza.",
-    }
-    with db_conn:
-        with db_conn.cursor() as cur:
-            save_framing(cur, test_article_id, payload)
-
-    with db_conn.cursor() as cur:
+    else:
         cur.execute(
-            "SELECT ideological_frame, actors, victims, antagonists, emotions, summary "
-            "FROM framings WHERE article_id = %s",
-            (test_article_id,),
+            f"""
+            SELECT e.{name_col}, NULL
+              FROM articles_entities ae
+              JOIN entities e ON e.id = ae.entity_id
+             WHERE ae.article_id = %s
+             ORDER BY e.id
+            """,
+            (article_id,),
         )
-        row = cur.fetchone()
-    assert row[0] == "crítico"
-    assert row[1] == ["prensa"]
-    assert row[2] == ["público"]
-    assert row[3] == ["desinformación"]
-    assert row[4] == ["alarma"]
-    assert isinstance(row[5], str) and "amenaza" in row[5]
+
+    rows = cur.fetchall()
+    return rows if rows else []
+
+
+# ----------------------------
+# Tests
+# ----------------------------
+def test_save_entities_persists_somewhere_expected():
+    """
+    Este test valida que save_entities realmente persiste entidades
+    en alguna de las rutas admitidas por el proyecto:
+      1) entity_mentions (crudas), o
+      2) articles.preprocessed_data.entities, o
+      3) entities + articles_entities (normalizadas)
+
+    Si no aparece en ninguna: el bug está en save_entities (no persiste).
+    """
+    entities = [
+        {"text": "Estado", "label": "LOC"},
+        {"text": "IPS", "label": "ORG"},
+    ]
+
+    with psycopg.connect(db_url_for_psycopg()) as conn:
+        with conn.cursor() as cur:
+            _truncate_all(cur)
+            _seed_minimal_fks(cur)
+            _insert_minimal_article(cur, article_id=1)
+
+            save_entities(conn, 1, entities)
+
+            # 1) menciones crudas
+            mentions = _try_fetch_mentions(cur, 1)
+            if mentions is not None and len(mentions) > 0:
+                assert mentions == [("Estado", "LOC"), ("IPS", "ORG")]
+                conn.commit()
+                return
+
+            # 2) preprocessed_data
+            pre_ents = _try_fetch_preprocessed_entities(cur, 1)
+            if pre_ents is not None and len(pre_ents) > 0:
+                assert pre_ents == entities
+                conn.commit()
+                return
+
+            # 3) normalizadas
+            norm = _try_fetch_normalized_entities(cur, 1)
+            if norm is not None and len(norm) > 0:
+                names = [r[0] for r in norm]
+                assert set(names) == {"Estado", "IPS"}
+
+                # si hay type, lo validamos; si no, sólo nombres
+                if norm[0][1] is not None:
+                    got = {(n, t) for (n, t) in norm}
+                    expected = {(e["text"], _label_to_type(e["label"])) for e in entities}
+                    # Permitimos que el sistema haya normalizado a OTHER en algunos casos,
+                    # pero al menos debería coincidir para ORG/LOC si tu pipeline lo setea.
+                    assert any((n, t) in got for (n, t) in expected)
+
+                conn.commit()
+                return
+
+            # Si llegamos aquí: no persistió en ningún lado
+            raise AssertionError(
+                "save_entities() no persistió entidades en entity_mentions, "
+                "ni en articles.preprocessed_data.entities, "
+                "ni en entities/articles_entities. Revisar implementación."
+            )

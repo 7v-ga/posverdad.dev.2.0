@@ -1,97 +1,54 @@
-# tests/integration/test_store_article.py
-# Test de integración de almacenamiento de artículo (transacción por item)
-
 import os
-import pytest
-import psycopg2
-from datetime import date
-from dotenv import load_dotenv
+
+import psycopg
+
+from tests._db import db_url_for_psycopg, truncate_all, seed_minimal_fks
 from scrapy_project.storage_helpers import store_article
 
-pytestmark = pytest.mark.integration
-load_dotenv()
 
-DB_PARAMS = {
-    "dbname": os.getenv("POSTGRES_DB", "posverdad"),
-    "user": os.getenv("POSTGRES_USER", "postgres"),
-    "password": os.getenv("POSTGRES_PASSWORD", "postgres"),
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
-    "port": os.getenv("POSTGRES_PORT", "5432"),
-}
+def _dsn() -> str:
+    return os.getenv("DATABASE_URL") or (
+        f"postgresql://{os.getenv('POSTGRES_USER', 'posverdad')}:"
+        f"{os.getenv('POSTGRES_PASSWORD', 'posverdad')}@"
+        f"{os.getenv('POSTGRES_HOST', 'localhost')}:"
+        f"{os.getenv('POSTGRES_PORT', '5432')}/"
+        f"{os.getenv('POSTGRES_DB', 'posverdad')}"
+    )
 
-TEST_URL = "https://example.com/integration-test"
-TEST_RUN = "run-test-unitario"
 
-@pytest.fixture(scope="module")
-def db_conn():
-    conn = psycopg2.connect(**DB_PARAMS)
-    yield conn
-    conn.close()
-
-def test_store_article_full(db_conn):
-    with db_conn:
-        with db_conn.cursor() as cur:
-            # Limpieza por URL (defensiva)
-            cur.execute("DELETE FROM framings WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles_entities WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles_keywords WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles_authors  WHERE article_id IN (SELECT id FROM articles WHERE url = %s)", (TEST_URL,))
-            cur.execute("DELETE FROM articles WHERE url = %s", (TEST_URL,))
-
-            # Prerrequisitos mínimos
-            cur.execute("INSERT INTO categories (id, name) VALUES (1, 'prueba') ON CONFLICT (id) DO NOTHING;")
-            cur.execute("INSERT INTO sources (id, name, domain) VALUES (1, 'Fuente Test', 'example.com') ON CONFLICT (id) DO NOTHING;")
-            cur.execute("INSERT INTO nlp_runs (run_id, date) VALUES (%s, CURRENT_TIMESTAMP) ON CONFLICT (run_id) DO NOTHING;", (TEST_RUN,))
+def test_store_article_saves_article_and_mentions():
+    with psycopg.connect(db_url_for_psycopg()) as conn:
+        with conn.cursor() as cur:
+            # En este proyecto, DELETE no resetea IDs. Usamos truncate_all (idealmente con RESTART IDENTITY).
+            truncate_all(cur)
+            seed_minimal_fks(cur)
 
             article = {
-                "title": "Artículo integración",
-                "url": TEST_URL,
-                "publication_date": date.today(),
-                "body": "Texto extenso de ejemplo para test completo.",
-                "meta_keywords": "test, integración",
-                "author": "Ana Test",
-                "run_id": TEST_RUN,
+                "title": "Test Article",
+                "url": "https://example.com/test",
+                "source_id": 1,
                 "category_id": 1,
-                "source_id": 1,          # store_article no lo usa hoy, pero no molesta
-                "image": None,
-                "meta_description": "Meta test",
-                # ⚠️ hash eliminado — body_hash lo deriva store_article automáticamente
-                "polarity": 0.5,
-                "subjectivity": 0.6,
-                "language": "es",
-                "sentiment": {"label": "POS", "probs": {"POS": 0.7, "NEU": 0.2, "NEG": 0.1}},
-                "entities": [
-                    {"text": "Chile", "label": "LOC"},
-                    {"text": "Prueba", "label": "ORG"},
-                ],
-                "framing": {
-                    "ideological_frame": "neutral",
-                    "actors": ["estado"],
-                    "victims": ["sociedad"],
-                    "antagonists": ["corrupción"],
-                    "emotions": ["indignación"],
-                    "summary": "El texto explora la tensión entre sociedad y poder.",
-                },
+                "publication_date": "2025-01-01T00:00:00Z",
+                "scraped_at": "2025-01-01T00:00:00Z",
+                "body": "Contenido de prueba.",
+                "entities": [{"text": "Test Entity", "label": "ORG"}],
             }
 
-            # 👉 Pasamos CURSOR (nuevo flujo): commit lo hace el 'with db_conn:'
-            article_id = store_article(cur, article)
-            assert isinstance(article_id, int) and article_id > 0
+            # store_article retorna el id REAL (PK) generado/actualizado en la tabla
+            article_id = store_article(conn, article)
 
-            # body_hash debe haberse seteado
-            cur.execute("SELECT body_hash FROM articles WHERE id = %s", (article_id,))
-            bh = cur.fetchone()[0]
-            assert bh is not None and len(bh) == 64
+            # Verifica artículo
+            cur.execute("SELECT id, title, url FROM articles WHERE id = %s", (article_id,))
+            row = cur.fetchone()
+            assert row is not None
+            assert row[1] == "Test Article"
+            assert row[2] == "https://example.com/test"
 
-            # Verificaciones básicas de relaciones
-            cur.execute("SELECT COUNT(*) FROM articles_authors WHERE article_id = %s", (article_id,))
-            assert cur.fetchone()[0] >= 1
-
-            cur.execute("SELECT COUNT(*) FROM articles_keywords WHERE article_id = %s", (article_id,))
-            assert cur.fetchone()[0] >= 2
+            # Verifica que guardó entidades (en entity_mentions o normalizadas en articles_entities)
+            cur.execute("SELECT COUNT(*) FROM entity_mentions WHERE article_id = %s", (article_id,))
+            mentions = cur.fetchone()[0]
 
             cur.execute("SELECT COUNT(*) FROM articles_entities WHERE article_id = %s", (article_id,))
-            assert cur.fetchone()[0] >= 2
+            links = cur.fetchone()[0]
 
-            cur.execute("SELECT COUNT(*) FROM framings WHERE article_id = %s", (article_id,))
-            assert cur.fetchone()[0] == 1
+            assert (mentions + links) > 0

@@ -13,8 +13,10 @@ from sqlalchemy import (
     Table,
     func,
 )
+from sqlalchemy import Boolean, JSON, String, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship, column_property
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 
@@ -50,6 +52,9 @@ articles_entities = Table(
 
 class Article(Base):
   __tablename__ = "articles"
+  __table_args__ = (
+    UniqueConstraint("url", name="uq_articles_url"),
+  )
 
   id = Column(BigInteger, primary_key=True, index=True)
   url = Column(Text, nullable=False)
@@ -57,6 +62,7 @@ class Article(Base):
   title = Column(Text, nullable=False)
   subtitle = Column(Text)
   body = Column(Text, nullable=False)
+  len_chars = Column(Integer, nullable=False)
 
   body_hash = Column(Text)
   hash = Column(Text)
@@ -90,9 +96,6 @@ class Article(Base):
     back_populates="articles",
   )
 
-  # 🔢 Longitud calculada del cuerpo (no es columna física)
-  len_chars = column_property(func.length(body))
-
 
 class Entity(Base):
   __tablename__ = "entities"
@@ -107,3 +110,43 @@ class Entity(Base):
     secondary="articles_entities",
     back_populates="entities",
   )
+
+class EntityMention(Base):
+    __tablename__ = "entity_mentions"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    article_id = Column(BigInteger, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+
+    raw_text = Column(Text, nullable=False)
+    raw_label = Column(Text)
+
+    span_start = Column(Integer)
+    span_end = Column(Integer)
+
+    canonical_entity_id = Column(Integer, ForeignKey("entities.id", ondelete="SET NULL"), nullable=True)
+
+    status = Column(Text, nullable=False, default="PENDING")
+    decision_scope = Column(Text, nullable=False, default="UNDECIDED")
+
+    note = Column(Text)
+    reviewed_by = Column(Text)
+    reviewed_at = Column(DateTime)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    article = relationship("Article", backref="entity_mentions")
+    canonical_entity = relationship("Entity", foreign_keys=[canonical_entity_id])
+
+
+class EntityAction(Base):
+    __tablename__ = "entity_actions"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    action_type = Column(Text, nullable=False)
+    scope = Column(Text, nullable=False)
+    status = Column(Text, nullable=False, default="APPLIED")
+    payload = Column(JSONB, nullable=False, default=dict)
+
+    created_by = Column(Text)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

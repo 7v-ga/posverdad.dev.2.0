@@ -13,7 +13,7 @@ if not RUN_ID:
 
 # === DB engine (SQLAlchemy) ===
 db_url = (
-    f"postgresql+psycopg2://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
+    f"postgresql+psycopg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
     f"@{os.getenv('POSTGRES_HOST', 'localhost')}:{os.getenv('POSTGRES_PORT', '5432')}"
     f"/{os.getenv('POSTGRES_DB')}"
 )

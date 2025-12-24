@@ -15,7 +15,7 @@ ARTICLE_HREF_PAT = re.compile(
     r"https?://(?:www\.)?elmostrador\.cl/.+/\d{4}/\d{2}/\d{2}/", re.I
 )
 
-DEFAULT_YEAR = 2020
+DEFAULT_YEAR = 2025
 DEFAULT_MAX_DUPLICATES = int(os.getenv("MAX_DUPLICATES_IN_A_ROW", "10"))
 
 
