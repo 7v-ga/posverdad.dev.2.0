@@ -2,9 +2,14 @@
 
 import { getArticle } from '@/lib/api'
 
-export default async function ArticleDetailPage({ params }: { params: { id: string } }) {
-  const id = Number(params.id)
-  const article = await getArticle(id)
+type PageProps = {
+  params: Promise<{ id: string }>
+}
+
+export default async function ArticleDetailPage({ params }: PageProps) {
+  const { id } = await params
+  const articleId = Number(id)
+  const article = await getArticle(articleId)
 
   return (
     <div className="mx-auto max-w-3xl p-6 space-y-6">
