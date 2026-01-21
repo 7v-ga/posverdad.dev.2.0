@@ -1,3 +1,4 @@
+# tests/unit/test_storage_db_branching.py
 import pytest
 from scrapy_project.storage_helpers import save_keywords
 
@@ -12,47 +13,80 @@ class KWConnOK:
     def rollback(self): self.rollbacks += 1
 
 class KWCursorOK:
-    """Cursor simple que soporta el flujo de save_keywords sin error."""
+    """
+    Cursor que modela:
+      - SELECT to_regclass(...)
+      - INSERT keywords ... RETURNING id
+      - SELECT id FROM keywords ...
+      - INSERT articles_keywords ...
+    """
     def __init__(self):
-        self.kw = {}  # word -> id
+        self.kw = {}  # keyword -> id
         self._row = None
         self._next = 1
+
     def execute(self, sql, params=None):
-        low = sql.lower()
+        low = " ".join(str(sql).strip().lower().split())
+
+        # Schema probing
+        if low.startswith("select to_regclass"):
+            # Simulamos que existe (devuelve nombre de tabla)
+            self._row = ("public.keywords",)
+            return
+
+        # INSERT ... RETURNING id (preferente)
+        if low.startswith("insert into keywords") and "returning id" in low:
+            w = params[0]
+            if w not in self.kw:
+                self.kw[w] = self._next
+                self._next += 1
+            self._row = (self.kw[w],)
+            return
+
+        # INSERT ... DO NOTHING (sin returning)
         if low.startswith("insert into keywords") and "do nothing" in low:
             w = params[0]
-            self.kw.setdefault(w, self._next); self._next = max(self._next, self.kw[w]+1)
+            if w not in self.kw:
+                self.kw[w] = self._next
+                self._next += 1
             self._row = None
-        elif low.startswith("select id from keywords"):
+            return
+
+        # SELECT id
+        if low.startswith("select id from keywords"):
             w = params[0]
             kid = self.kw.get(w)
             self._row = (kid,) if kid else None
-        elif low.startswith("insert into keywords") and "returning id" in low:
-            w = params[0]
-            self.kw.setdefault(w, self._next); self._next = max(self._next, self.kw[w]+1)
-            self._row = (self.kw[w],)
-        elif low.startswith("insert into articles_keywords"):
+            return
+
+        # Link table insert
+        if low.startswith("insert into articles_keywords"):
             self._row = None
-        else:
-            self._row = None
-    def fetchone(self): return self._row
+            return
+
+        self._row = None
+
+    def fetchone(self):
+        return self._row
 
 def test_save_keywords_as_connection_ok():
-    db = KWConnOK()            # conexión
+    db = KWConnOK()
     save_keywords(db, 1, ["a", "b"])
-    assert db.commits == 1     # se hizo commit (manage_tx=True)
+    assert db.commits == 1
     assert db.rollbacks == 0
+    assert set(db._cur.kw.keys()) >= {"a", "b"}
 
 class KWConnFail(KWConnOK):
-    """Fuerza excepción a mitad de ciclo para cubrir rollback."""
-    def __init__(self): super().__init__(); self._cur = KWCursorFail(self)
+    """Fuerza excepción en un punto no-ignorable para cubrir rollback + RuntimeError."""
+    def __init__(self):
+        super().__init__()
+        self._cur = KWCursorFail()
 
 class KWCursorFail(KWCursorOK):
-    def __init__(self, parent): super().__init__(); self.parent = parent; self.calls = 0
     def execute(self, sql, params=None):
-        self.calls += 1
-        # Lanza en la 3ª llamada para entrar al except de save_keywords
-        if self.calls == 3:
+        low = " ".join(str(sql).strip().lower().split())
+        # Romper en el INSERT a keywords con RETURNING (debe propagar como RuntimeError)
+        if low.startswith("insert into keywords") and "returning id" in low:
             raise RuntimeError("boom")
         return super().execute(sql, params)
 
@@ -61,12 +95,9 @@ def test_save_keywords_rollback_on_error():
     with pytest.raises(RuntimeError):
         save_keywords(db, 1, ["x", "y"])
     assert db.rollbacks == 1
-    # No hay commit
     assert db.commits == 0
 
 def test_save_keywords_as_cursor_ok():
-    # _as_cursor detecta cursor directo (manage_tx=False, no commit/rollback)
     cur = KWCursorOK()
     save_keywords(cur, 99, ["k"])
-    # simple smoke: la palabra quedó registrada
     assert "k" in cur.kw

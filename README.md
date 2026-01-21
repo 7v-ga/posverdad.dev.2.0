@@ -1,156 +1,104 @@
-# Posverdad – Base de datos y migraciones (Alembic)
+# Posverdad v2 — Plataforma de Scraping, NLP y Análisis Editorial
 
-Este proyecto utiliza **SQLAlchemy + Alembic** para versionar y mantener el esquema de la base de datos.
-La base de datos se considera **descartable en desarrollo**, pero las migraciones permiten:
+Posverdad es una plataforma de **recolección, análisis y exploración de noticias** basada en scraping, procesamiento de lenguaje natural (NLP) y persistencia estructurada en PostgreSQL.
 
-- reconstruirla desde cero en cualquier entorno
-- evolucionar el esquema de forma controlada en el futuro
+Desde la versión **v2**, el proyecto utiliza **SQLAlchemy + Alembic** como **fuente única de verdad del esquema**, permitiendo reconstruir y evolucionar la base de datos de forma controlada.
+
+---
+
+## Componentes principales
+
+- **Scrapy** — ingestión de noticias
+- **PostgreSQL** — base de datos principal
+- **Alembic** — versionado del esquema
+- **FastAPI** — API de consulta
+- **Next.js** — frontend
+- **NLP híbrido** — spaCy + pysentimiento + heurísticas propias
+- **Docker Compose** — entorno de desarrollo reproducible
 
 ---
 
 ## Requisitos
 
-- Python 3.12
+- Python **3.12**
 - Docker + Docker Compose
 - PostgreSQL (vía contenedor)
 - `uv` (recomendado) o `pip`
+- Node.js + `pnpm` (solo para frontend)
 
 ---
 
-## Dependencias relevantes
+## Instalación de dependencias Python
 
-En `requirements.in` deben existir al menos:
-
-```txt
-SQLAlchemy>=2.0,<3.0
-alembic>=1.13
-psycopg[binary]>=3.2
-```
-
-Instalación con `uv`:
+### Desarrollo (recomendado)
 
 ```bash
-uv pip install -r requirements.txt
+make py-install
+```
+
+### Producción / mínimo
+
+```bash
+make py-install-prod
 ```
 
 ---
 
 ## Variables de entorno
 
-La aplicación y Alembic usan **una sola URL de conexión**.
-
-`.env`:
+La **aplicación completa y Alembic** utilizan **una sola URL de conexión**.
 
 ```env
 DATABASE_URL=postgresql+psycopg://posverdad:posverdad@localhost:5432/posverdad
 ```
 
-> ⚠️ Importante:
->
-> - **NO usar `psycopg2`**
-> - El driver correcto es `postgresql+psycopg` (psycopg v3)
+**Importante**
+
+- NO usar `psycopg2`
+- Usar `postgresql+psycopg` (psycopg v3)
 
 ---
 
-## Arranque de la base de datos (Docker)
+## Base de datos
 
 ```bash
-docker compose up -d db
+make db-up
+make db-wait
 ```
 
-Esperar a que PostgreSQL esté listo:
+Reset destructivo:
 
 ```bash
-docker exec posverdad-db-1 pg_isready -U posverdad -d posverdad
-```
-
----
-
-## Alembic – uso básico
-
-### Estado actual
-
-```bash
-alembic current
-```
-
-### Crear una migración automática
-
-```bash
-alembic revision --autogenerate -m "descripcion"
-```
-
-### Aplicar migraciones
-
-```bash
-alembic upgrade head
+make db-reset
 ```
 
 ---
 
-## Flujo recomendado (desarrollo)
-
-Base limpia desde cero:
+## Migraciones (Alembic)
 
 ```bash
-docker compose down -v
-docker compose up -d db
-
-until docker exec posverdad-db-1 pg_isready -U posverdad -d posverdad; do
-  sleep 1
-done
-
-alembic upgrade head
+make migrate-current
+make migrate
+make migrate-revision MSG="descripcion"
 ```
 
 ---
 
-## Esquema controlado por Alembic
+## Flujo recomendado (desde cero)
 
-Las tablas actuales incluyen:
-
-- articles
-- entities
-- articles_entities
-- entity_mentions
-- entity_actions
-- categories
-- sources
-- alembic_version
-
-⚠️ **No modificar el esquema directamente en SQL en producción.**
-Toda modificación debe hacerse mediante:
-
-1. cambio en modelos SQLAlchemy
-2. nueva migración Alembic
+```bash
+make reset-all
+```
 
 ---
 
-## Sobre `nlp_runs`
+## Scraping
 
-La tabla `nlp_runs` **ya no forma parte del esquema activo**.
+```bash
+make scrape SPIDER=el_mostrador COUNT=5
+```
 
-Referencias antiguas deben:
-
-- eliminarse o
-- adaptarse a un sistema de auditoría basado en:
-  - `entity_actions`
-  - timestamps
-  - metadata JSON
-
-Alembic es ahora la fuente de verdad del estado del esquema.
-
----
-
-## Scraping y base de datos
-
-Antes de ejecutar Scrapy:
-
-1. Confirmar que la base existe
-2. Confirmar que las migraciones están aplicadas
-3. Confirmar que no hay referencias a tablas eliminadas (`nlp_runs`, vistas antiguas, etc.)
-
-Verificación rápida:
+Verificar tablas:
 
 ```bash
 psql "$DATABASE_URL" -c "\dt"
@@ -158,20 +106,45 @@ psql "$DATABASE_URL" -c "\dt"
 
 ---
 
-## Buenas prácticas
+## API
 
-- Nunca versionar archivos generados (`tsbuildinfo`, `.eslintcache`, etc.)
-- Nunca mezclar `psycopg2` con `psycopg`
-- Mantener **una sola fuente de conexión** (`DATABASE_URL`)
-- Cada cambio estructural → migración nueva
+```bash
+make api-dev
+```
+
+Disponible en http://127.0.0.1:8000
+
+---
+
+## Frontend
+
+```bash
+make web-dev
+```
+
+---
+
+## Tests
+
+```bash
+make test
+make test-nocov
+```
 
 ---
 
 ## Estado actual
 
-✔ Alembic operativo  
-✔ PostgreSQL en Docker  
-✔ Base reconstruible desde cero  
-✔ Esquema versionado
+- Alembic operativo
+- Base reconstruible
+- Scraping funcional con ajustes pendientes
+- NLP en fase de estabilización (polarity, subjectivity, entities)
 
-El proyecto está listo para continuar con scraping y normalización de entidades.
+---
+
+## Próximos focos
+
+1. Estabilizar polarity / subjectivity
+2. Consolidar entidades
+3. Robustecer transacciones Scrapy
+4. Ampliar tests reales

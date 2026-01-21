@@ -112,3 +112,4 @@ logs/
 # Allowlist: things we DO want to commit
 ###########################################
 !.gitkeep
+.coverage
